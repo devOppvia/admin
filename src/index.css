@@ -1,0 +1,161 @@
+@import "tailwindcss";
+
+:root {
+  /* Brand Colors — Oppvia Theme */
+  --brand-primary: #0A3031;
+  --brand-primary-light: #144b4d;
+  --brand-primary-dark: #051A1A;
+  --brand-accent: #FFD466;
+  --brand-secondary: #E6F0F0;
+
+  /* Backgrounds */
+  --bg-page: #f9fbfb;
+  --bg-surface: #ffffff;
+
+  /* Premium Mesh Colors */
+  --mesh-color-1: rgba(10, 48, 49, 0.03);
+  --mesh-color-2: rgba(255, 212, 102, 0.04);
+  --mesh-color-3: rgba(20, 184, 166, 0.02);
+
+  /* Text */
+  --text-primary: #1C2024;
+  --text-secondary: #475467;
+  --text-tertiary: #667085;
+
+  /* Radii */
+  --radius-3xl: 2.5rem;
+  --radius-2xl: 1.75rem;
+  --radius-xl: 1.25rem;
+
+  /* Shadows */
+  --shadow-soft: 0 10px 40px -10px rgba(10, 48, 49, 0.08);
+  --shadow-premium: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 20px 40px -8px rgb(0 0 0 / 0.06);
+  --shadow-glass: 0 8px 32px 0 rgba(10, 48, 49, 0.04);
+}
+
+@theme {
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-light: var(--brand-primary-light);
+  --color-brand-primary-dark: var(--brand-primary-dark);
+  --color-brand-dark: var(--brand-primary-dark);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-secondary: var(--brand-secondary);
+  --shadow-soft: var(--shadow-soft);
+}
+
+body {
+  background:
+
+    radial-gradient(1200px 600px at 10% -10%,
+      rgba(255, 212, 102, 0.04),
+      transparent 60%),
+
+    /* Deep Teal Primary Mesh */
+    radial-gradient(900px 500px at 90% 10%,
+      rgba(10, 48, 49, 0.06),
+      transparent 60%),
+
+    /* Soft Aqua Highlight */
+    radial-gradient(800px 500px at 80% 90%,
+      rgba(20, 184, 166, 0.05),
+      transparent 65%),
+
+    /* Bottom Depth Layer */
+    radial-gradient(1000px 600px at 0% 100%,
+      rgba(10, 48, 49, 0.04),
+      transparent 60%),
+
+    var(--bg-page);
+
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  letter-spacing: -0.01em;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("/noise.png");
+  opacity: 0.04;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Animation Utilities */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.5s ease-out forwards;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin 8s linear infinite;
+}
+
+/* Multi-browser Hide scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
