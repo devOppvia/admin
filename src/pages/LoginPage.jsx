@@ -1,27 +1,92 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { loginSuccess } from '../store/slices/authSlice';
+import { useNavigate } from 'react-router-dom';
+import { loginStart, loginSuccess, loginFailure } from '../store/slices/authSlice';
+import { loginApi } from '../helper/api_helper';
 import {
     Mail,
     Lock,
     ArrowRight,
     ShieldCheck,
     Sparkles,
-    ChevronRight
+    ChevronRight,
+    Loader2,
+    AlertCircle
 } from 'lucide-react';
 
 const LoginPage = () => {
     const dispatch = useDispatch();
-    const [email, setEmail] = useState('admin@oppvia.com');
-    const [password, setPassword] = useState('password123');
+    const navigate = useNavigate();
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
-    const handleLogin = (e) => {
+    const validateForm = () => {
+        if (!username.trim()) {
+            setError('Username is required');
+            return false;
+        }
+        if (username.trim().length < 3) {
+            setError('Username must be at least 3 characters');
+            return false;
+        }
+        if (!password) {
+            setError('Password is required');
+            return false;
+        }
+        if (password.length < 6) {
+            setError('Password must be at least 6 characters');
+            return false;
+        }
+        return true;
+    };
+
+    const handleLogin = async (e) => {
         e.preventDefault();
-        // Simplified trigger for mock login
-        dispatch(loginSuccess({
-            user: { id: 1, name: 'Admin User', email, role: 'ADMIN' },
-            token: 'mock-jwt-token'
-        }));
+        setError('');
+
+        if (!validateForm()) {
+            return;
+        }
+
+        setLoading(true);
+        dispatch(loginStart());
+
+        try {
+            const response = await loginApi({
+                username: username.trim(),
+                password: password
+            });
+
+            if (response.status) {
+                const { adminData, accessToken } = response.data;
+
+                // Store data in localStorage
+                localStorage.setItem('accessToken', accessToken);
+                localStorage.setItem('adminData', JSON.stringify(adminData));
+                localStorage.setItem('user-login-id', adminData.id);
+
+                // Dispatch to Redux state
+                dispatch(loginSuccess({
+                    adminData: adminData,
+                    accessToken: accessToken
+                }));
+
+                // Navigate to dashboard
+                navigate('/dashboard');
+            } else {
+                const errorMsg = response.message || 'Login failed. Please try again.';
+                setError(errorMsg);
+                dispatch(loginFailure(errorMsg));
+            }
+        } catch (err) {
+            const errorMessage = err || 'An error occurred during login. Please try again.';
+            setError(errorMessage);
+            dispatch(loginFailure(errorMessage));
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -80,16 +145,24 @@ const LoginPage = () => {
                         </div>
 
                         <form onSubmit={handleLogin} className="space-y-6">
+                            {/* Error Message Display */}
+                            {error && (
+                                <div className="flex items-center gap-2 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm">
+                                    <AlertCircle className="w-4 h-4 shrink-0" />
+                                    {error}
+                                </div>
+                            )}
+
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-4">Authorized Email</label>
+                                <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-4">Username</label>
                                 <div className="relative group">
                                     <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-brand-accent transition-colors" />
                                     <input
-                                        type="email"
-                                        placeholder="admin@oppvia.com"
+                                        type="text"
+                                        placeholder="Enter username"
                                         className="w-full bg-white/[0.05] border border-white/5 rounded-3xl py-4 pl-14 pr-6 text-white text-sm focus:bg-white/10 focus:border-brand-accent/30 transition-all focus:ring-4 focus:ring-brand-accent/5"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
                                         required
                                     />
                                 </div>
@@ -113,9 +186,19 @@ const LoginPage = () => {
                             <div className="pt-6">
                                 <button
                                     type="submit"
-                                    className="w-full bg-brand-accent text-brand-primary p-5 rounded-[28px] font-black text-sm uppercase tracking-widest shadow-lg shadow-brand-accent/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4 group/btn"
+                                    disabled={loading}
+                                    className="w-full bg-brand-accent text-brand-primary p-5 rounded-[28px] font-black text-sm uppercase tracking-widest shadow-lg shadow-brand-accent/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4 group/btn disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 >
-                                    Initialize System <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            Authenticating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            Initialize System <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </form>
