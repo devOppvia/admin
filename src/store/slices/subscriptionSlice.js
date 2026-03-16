@@ -1,47 +1,27 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-    packages: [
-        {
-            id: 1,
-            packageName: "Basic Plan",
-            actualPrice: 1000,
-            discountedPrice: 800,
-            numberOfJobPosting: 5,
-            numberOfResumeAccess: 50,
-            jobDaysActive: 30,
-            expireDaysPackage: 30,
-            sortDescription: "Ideal for small businesses starting out."
-        },
-        {
-            id: 2,
-            packageName: "Pro Plan",
-            actualPrice: 2500,
-            discountedPrice: 2000,
-            numberOfJobPosting: 20,
-            numberOfResumeAccess: 200,
-            jobDaysActive: 60,
-            expireDaysPackage: 90,
-            sortDescription: "Perfect for growing companies hiring regularly."
-        },
-        {
-            id: 3,
-            packageName: "Premium Enterprise",
-            actualPrice: 5000,
-            discountedPrice: 4000,
-            numberOfJobPosting: 50,
-            numberOfResumeAccess: 1000,
-            jobDaysActive: 90,
-            expireDaysPackage: 365,
-            sortDescription: "Comprehensive solution for large-scale operations."
-        }
-    ]
+    packages: [],
+    loading: false,
+    error: null,
 };
 
 const subscriptionSlice = createSlice({
     name: 'subscription',
     initialState,
     reducers: {
+        setPackages: (state, action) => {
+            state.packages = action.payload;
+            state.loading = false;
+            state.error = null;
+        },
+        setLoading: (state, action) => {
+            state.loading = action.payload;
+        },
+        setError: (state, action) => {
+            state.error = action.payload;
+            state.loading = false;
+        },
         addPackage: (state, action) => {
             const newPackage = {
                 id: Date.now(),
@@ -61,5 +41,5 @@ const subscriptionSlice = createSlice({
     },
 });
 
-export const { addPackage, updatePackage, deletePackage } = subscriptionSlice.actions;
+export const { addPackage, updatePackage, deletePackage, setPackages, setLoading, setError } = subscriptionSlice.actions;
 export default subscriptionSlice.reducer;

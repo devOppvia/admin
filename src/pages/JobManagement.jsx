@@ -1,72 +1,58 @@
-import { useSelector, useDispatch } from "react-redux";
-import {
-  updateJobStatus,
-  deleteJob,
-  updateBulkJobStatus,
-} from "../store/slices/jobSlice";
+import { useDispatch } from "react-redux";
+import { updateJobStatus, deleteJob } from "../store/slices/jobSlice";
 import {
   Briefcase,
   Search,
-  Filter,
   CheckCircle2,
   XCircle,
   Eye,
   Building2,
-  Calendar,
   Layers,
   MapPin,
   Clock,
-  UserPlus,
   DollarSign,
   MoreVertical,
   Trash2,
   Star,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import StatusTabs from "../components/common/StatusTabs";
 import EmptyState from "../components/common/EmptyState";
 import Modal from "../components/modals/Modal";
 import Checkbox from "../components/common/Checkbox";
 import JobDetailsModal from "../components/modals/JobDetailsModal";
+import { getJobPositions } from "../helper/api_helper"; // adjust import path as needed
+
+const ITEMS_PER_PAGE = 5;
 
 const internStatus = [
-  {
-    label: "All",
-    value: "",
-    icon: "mdi:briefcase-search-outline",
-  },
-  {
-    label: "Review",
-    value: "REVIEW",
-    icon: "mdi:eye-check-outline",
-  },
-  {
-    label: "Approved",
-    value: "APPROVED",
-    icon: "mdi:check-circle-outline",
-  },
-  {
-    label: "Paused",
-    value: "PAUSED",
-    icon: "mdi:pause-circle-outline",
-  },
+  { label: "All", value: "", icon: "mdi:briefcase-search-outline" },
+  { label: "Review", value: "REVIEW", icon: "mdi:eye-check-outline" },
+  { label: "Approved", value: "APPROVED", icon: "mdi:check-circle-outline" },
+  { label: "Paused", value: "PAUSED", icon: "mdi:pause-circle-outline" },
   {
     label: "Completed",
     value: "COMPLETED",
     icon: "mdi:check-decagram-outline",
   },
-  {
-    label: "Rejected",
-    value: "REJECTED",
-    icon: "mdi:close-circle-outline",
-  },
+  { label: "Rejected", value: "REJECTED", icon: "mdi:close-circle-outline" },
 ];
 
 const JobManagement = () => {
   const dispatch = useDispatch();
-  const { list } = useSelector((state) => state.jobs);
-  const [activeTab, setActiveTab] = useState("ALL");
+
+  // API State
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [totalItems, setTotalItems] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // UI State
+  const [activeTab, setActiveTab] = useState("");
   const [search, setSearch] = useState("");
   const [selectedJobs, setSelectedJobs] = useState([]);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
@@ -74,35 +60,62 @@ const JobManagement = () => {
   const [currentJobToReject, setCurrentJobToReject] = useState(null);
   const [selectedJobView, setSelectedJobView] = useState(null);
 
-  // Filter Logic
-  const filteredJobs = useMemo(() => {
-    return list.filter((job) => {
-      const matchesTab = activeTab === "ALL" || job.status === activeTab;
-      const matchesSearch =
-        job.jobTitle.toLowerCase().includes(search.toLowerCase()) ||
-        job.company.companyName.toLowerCase().includes(search.toLowerCase()) ||
-        job.jobCategory.categoryName
-          .toLowerCase()
-          .includes(search.toLowerCase());
-      return matchesTab && matchesSearch;
-    });
-  }, [list, activeTab, search]);
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
 
-  // Tab Counts
-  const tabCounts = useMemo(() => {
-    return {
-      ALL: list.length,
-      REVIEW: list.filter((j) => j.status === "REVIEW").length,
-      APPROVED: list.filter((j) => j.status === "APPROVED").length,
-      PAUSED: list.filter((j) => j.status === "PAUSED").length,
-      COMPLETED: list.filter((j) => j.status === "COMPLETED").length,
-      REJECTED: list.filter((j) => j.status === "REJECTED").length,
-    };
-  }, [list]);
+  // ─── Fetch Jobs ───────────────────────────────────────────────────────────────
+  const fetchJobs = useCallback(async (status, page) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await getJobPositions(
+        status, // "" for ALL, or "REVIEW", "APPROVED", etc.
+        ITEMS_PER_PAGE,
+        page,
+      );
 
-  const tabs = ["ALL", "REVIEW", "APPROVED", "PAUSED", "COMPLETED", "REJECTED"];
+      // 👇 Check this log to find the exact field name for total count
+      console.log("getJobPositions response:", response);
 
-  // Action Handlers
+      const jobsList = response?.data?.jobs ?? response?.jobs ?? [];
+
+      const total = response?.data?.totalJobs;
+      jobsList.length; // fallback: keeps pagination working even if field name is unknown
+
+      setJobs(jobsList);
+      setTotalItems(total);
+    } catch (err) {
+      setError("Failed to load jobs. Please try again.");
+      console.error("getJobPositions error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch on tab or page change
+  useEffect(() => {
+    setSelectedJobs([]);
+    fetchJobs(activeTab, currentPage);
+  }, [activeTab, currentPage, fetchJobs]);
+
+  // Reset to page 1 when tab changes
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+  };
+
+  // Client-side search filter (optional — remove if server handles search)
+  const filteredJobs = search
+    ? jobs.filter((job) => {
+        const q = search.toLowerCase();
+        return (
+          job.jobTitle?.toLowerCase().includes(q) ||
+          job.company?.companyName?.toLowerCase().includes(q) ||
+          job.jobCategory?.categoryName?.toLowerCase().includes(q)
+        );
+      })
+    : jobs;
+
+  // ─── Action Handlers ──────────────────────────────────────────────────────────
   const handleRejectClick = (job) => {
     setCurrentJobToReject(job);
     setIsRejectModalOpen(true);
@@ -110,11 +123,15 @@ const JobManagement = () => {
 
   const handleStatusUpdate = (id, status) => {
     if (status === "REJECTED") {
-      const job = list.find((j) => j.id === id);
+      const job = jobs.find((j) => j.id === id);
       handleRejectClick(job);
       return;
     }
     dispatch(updateJobStatus({ id, status }));
+    // Optimistic UI update in local list
+    setJobs((prev) =>
+      prev.map((j) => (j.id === id ? { ...j, jobStatus: status } : j)),
+    );
   };
 
   const handleRejectSubmit = () => {
@@ -126,6 +143,13 @@ const JobManagement = () => {
         rejectReason: rejectReason.trim(),
       }),
     );
+    setJobs((prev) =>
+      prev.map((j) =>
+        j.id === currentJobToReject.id
+          ? { ...j, jobStatus: "REJECTED", rejectReason: rejectReason.trim() }
+          : j,
+      ),
+    );
     setIsRejectModalOpen(false);
     setRejectReason("");
     setCurrentJobToReject(null);
@@ -134,11 +158,18 @@ const JobManagement = () => {
 
   const handleApproveFromModal = (id) => {
     dispatch(updateJobStatus({ id, status: "APPROVED" }));
+    setJobs((prev) =>
+      prev.map((j) => (j.id === id ? { ...j, jobStatus: "APPROVED" } : j)),
+    );
     setSelectedJobView(null);
   };
 
   const handleBulkStatusChange = (status) => {
-    dispatch(updateBulkJobStatus({ ids: selectedJobs, status }));
+    setJobs((prev) =>
+      prev.map((j) =>
+        selectedJobs.includes(j.id) ? { ...j, jobStatus: status } : j,
+      ),
+    );
     setSelectedJobs([]);
   };
 
@@ -173,6 +204,23 @@ const JobManagement = () => {
     }
   };
 
+  // ─── Pagination helpers ───────────────────────────────────────────────────────
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      const start = Math.max(1, currentPage - 2);
+      const end = Math.min(totalPages, start + maxVisible - 1);
+      if (start > 1) pages.push(1, "...");
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (end < totalPages) pages.push("...", totalPages);
+    }
+    return pages;
+  };
+
+  // ─── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Page Header */}
@@ -218,9 +266,7 @@ const JobManagement = () => {
               </div>
             </div>
           )}
-          <button className="flex items-center gap-2 bg-brand-primary/3 text-brand-primary px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-white border border-brand-primary/5 transition-all">
-            Job Reports
-          </button>
+         
         </div>
       </div>
 
@@ -230,13 +276,11 @@ const JobManagement = () => {
           <StatusTabs
             tabs={internStatus}
             activeTab={activeTab}
-            onTabChange={setActiveTab}
-            count={tabCounts}
+            onTabChange={handleTabChange}
           />
-
           <div className="flex items-center gap-4">
             <div className="relative group">
-              <Search className="absolute  left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-primary/30 group-focus-within:text-brand-primary transition-colors" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-primary/30 group-focus-within:text-brand-primary transition-colors" />
               <input
                 type="text"
                 placeholder="Search roles, companies or categories..."
@@ -250,7 +294,28 @@ const JobManagement = () => {
 
         {/* Table Area */}
         <div className="overflow-x-auto no-scrollbar min-h-[400px]">
-          {filteredJobs.length > 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center h-[400px]">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-10 h-10 border-4 border-brand-primary/20 border-t-brand-primary rounded-full animate-spin" />
+                <p className="text-xs font-bold text-brand-primary/40 uppercase tracking-widest">
+                  Loading Jobs...
+                </p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-[400px]">
+              <div className="text-center space-y-3">
+                <p className="text-sm font-bold text-red-500">{error}</p>
+                <button
+                  onClick={() => fetchJobs(activeTab, currentPage)}
+                  className="px-6 py-2.5 bg-brand-primary text-white rounded-2xl font-bold text-[10px] uppercase tracking-widest"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          ) : filteredJobs.length > 0 ? (
             <table className="w-full text-left border-separate border-spacing-y-4">
               <thead>
                 <tr className="text-brand-primary/30 uppercase text-[10px] font-black tracking-[0.2em]">
@@ -266,7 +331,7 @@ const JobManagement = () => {
                   <th className="px-6 py-2">Job & Company</th>
                   <th className="px-6 py-2">Details</th>
                   <th className="px-6 py-2">Compensation</th>
-                  {activeTab === "REVIEW" && (
+                  {(activeTab === "REVIEW" || activeTab === "") && (
                     <th className="px-6 py-2">AI Score</th>
                   )}
                   <th className="px-6 py-2 text-center">Status</th>
@@ -296,7 +361,7 @@ const JobManagement = () => {
                           </p>
                           <p className="text-[10px] text-brand-primary/40 flex items-center gap-1.5 font-black uppercase tracking-widest">
                             <Building2 className="w-3 h-3" />{" "}
-                            {job.company.companyName}
+                            {job.company?.companyName}
                           </p>
                         </div>
                       </div>
@@ -305,10 +370,10 @@ const JobManagement = () => {
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2 text-[10px] font-bold text-brand-primary/60">
                           <Layers className="w-3 h-3" />{" "}
-                          {job.jobCategory.categoryName}
+                          {job.jobCategory?.categoryName}
                         </div>
                         <div className="flex items-center gap-2 text-[10px] font-bold text-brand-primary/40">
-                          <MapPin className="w-3 h-3" /> {job.location}
+                          <MapPin className="w-3 h-3" /> {job.jobType}
                         </div>
                       </div>
                     </td>
@@ -316,7 +381,9 @@ const JobManagement = () => {
                       <div className="space-y-1.5 font-bold">
                         <div className="flex items-center gap-2 text-[11px] text-brand-primary">
                           <DollarSign className="w-3.5 h-3.5 text-brand-accent" />{" "}
-                          {job.stipend}
+                          {job.stipend === "YES"
+                            ? "Paid"
+                            : (job.stipend ?? "Unpaid")}
                         </div>
                         <div className="flex items-center gap-2 text-[10px] text-brand-primary/40">
                           <Clock className="w-3.5 h-3.5" />{" "}
@@ -324,21 +391,21 @@ const JobManagement = () => {
                         </div>
                       </div>
                     </td>
-                    {activeTab === "REVIEW" && (
+                    {(activeTab === "REVIEW" || activeTab === "") && (
                       <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5">
                         <div className="flex items-center gap-2 bg-white/50 px-3 py-1.5 rounded-full w-fit border border-brand-primary/5">
                           <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
                           <span className="text-xs font-black text-brand-primary">
-                            {job.score}
+                            {job.score ?? "N/A"}
                           </span>
                         </div>
                       </td>
                     )}
                     <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5 text-center">
                       <span
-                        className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase inline-block ${getStatusStyle(job.status)}`}
+                        className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase inline-block ${getStatusStyle(job.jobStatus)}`}
                       >
-                        {job.status}
+                        {job.jobStatus}
                       </span>
                     </td>
                     <td className="bg-brand-primary/2 px-6 py-5 rounded-r-3xl border-y border-brand-primary/5 text-right">
@@ -355,7 +422,7 @@ const JobManagement = () => {
                             <MoreVertical className="w-5 h-5" />
                           </button>
                           <div className="absolute right-0 bottom-full mb-2 w-44 bg-white rounded-2xl shadow-xl border border-brand-primary/5 py-2 z-20 opacity-0 invisible group-hover/actions:opacity-100 group-hover/actions:visible transition-all">
-                            {job.status === "REVIEW" && (
+                            {job.jobStatus === "REVIEW" && (
                               <>
                                 <button
                                   onClick={() =>
@@ -376,7 +443,7 @@ const JobManagement = () => {
                                 </button>
                               </>
                             )}
-                            {job.status === "APPROVED" && (
+                            {job.jobStatus === "APPROVED" && (
                               <>
                                 <button
                                   onClick={() =>
@@ -400,7 +467,12 @@ const JobManagement = () => {
                             )}
                             <div className="h-px bg-brand-primary/5 my-1 mx-2" />
                             <button
-                              onClick={() => dispatch(deleteJob(job.id))}
+                              onClick={() => {
+                                dispatch(deleteJob(job.id));
+                                setJobs((prev) =>
+                                  prev.filter((j) => j.id !== job.id),
+                                );
+                              }}
                               className="w-full text-left px-4 py-2 text-[10px] font-bold text-red-400 hover:bg-red-50 uppercase tracking-wider flex items-center gap-2"
                             >
                               <Trash2 className="w-3.5 h-3.5" /> Delete Entry
@@ -430,6 +502,64 @@ const JobManagement = () => {
             />
           )}
         </div>
+
+        {/* ─── Pagination ─────────────────────────────────────────────────────── */}
+        {!loading && !error && jobs.length > 0 && (
+          <div className="flex items-center justify-between pt-4 border-t border-brand-primary/5">
+            <p className="text-[10px] font-black text-brand-primary/30 uppercase tracking-widest">
+              Showing{" "}
+              <span className="text-brand-primary/60">
+                {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
+                {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)}
+              </span>{" "}
+              of <span className="text-brand-primary/60">{totalItems}</span>{" "}
+              jobs
+            </p>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-xl text-brand-primary/40 hover:bg-brand-primary/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              {getPageNumbers().map((page, idx) =>
+                page === "..." ? (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="w-8 text-center text-[10px] font-black text-brand-primary/30"
+                  >
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-8 h-8 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                      currentPage === page
+                        ? "bg-brand-primary text-white shadow-premium"
+                        : "text-brand-primary/40 hover:bg-brand-primary/5"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ),
+              )}
+
+              <button
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-xl text-brand-primary/40 hover:bg-brand-primary/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Reject Modal */}
@@ -485,6 +615,7 @@ const JobManagement = () => {
           </div>
         </Modal>
       )}
+
       {/* Job Details Modal */}
       {selectedJobView && (
         <JobDetailsModal
