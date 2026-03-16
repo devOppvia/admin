@@ -17,6 +17,8 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Plus,
+  Pencil,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import StatusTabs from "../components/common/StatusTabs";
@@ -24,9 +26,28 @@ import EmptyState from "../components/common/EmptyState";
 import Modal from "../components/modals/Modal";
 import Checkbox from "../components/common/Checkbox";
 import JobDetailsModal from "../components/modals/JobDetailsModal";
-import { getJobPositions } from "../helper/api_helper"; // adjust import path as needed
+import {
+  getJobPositions,
+  getJobCategory,
+  createJobCategory,
+  updateJobCategory,
+  deleteJobCategory,
+  getJobCategoryForSubCategory,
+  createJobSubCategory,
+  getJobSubCategory,
+  updateJobSubCategory,
+  deleteJobSubCategory,
+  getJobSkills,
+  createJobSkills,
+  updateJobSkills,
+  deleteJobSkill,
+  getJobSubCategoryForSkills,
+} from "../helper/api_helper";
 
 const ITEMS_PER_PAGE = 5;
+const CATEGORY_ITEMS_PER_PAGE = 10;
+const SUBCATEGORY_ITEMS_PER_PAGE = 10;
+const SKILL_ITEMS_PER_PAGE = 10;
 
 const internStatus = [
   { label: "All", value: "", icon: "mdi:briefcase-search-outline" },
@@ -60,7 +81,50 @@ const JobManagement = () => {
   const [currentJobToReject, setCurrentJobToReject] = useState(null);
   const [selectedJobView, setSelectedJobView] = useState(null);
 
+  // ─── Category State ────────────────────────────────────────────────────────────
+  const [categories, setCategories] = useState([]);
+  const [categoryTotalItems, setCategoryTotalItems] = useState(0);
+  const [categoryPage, setCategoryPage] = useState(1);
+  const [categoryNameInput, setCategoryNameInput] = useState("");
+  const [editingCategoryId, setEditingCategoryId] = useState(null);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+
+  // ─── Sub Category State ───────────────────────────────────────────────────────
+  const [subCategories, setSubCategories] = useState([]);
+  const [subCategoryTotalItems, setSubCategoryTotalItems] = useState(0);
+  const [subCategoryPage, setSubCategoryPage] = useState(1);
+  const [subCategoryNameInput, setSubCategoryNameInput] = useState("");
+  const [editingSubCategory, setEditingSubCategory] = useState(null);
+  const [subCategoryLoading, setSubCategoryLoading] = useState(false);
+  const [subCategoryCategoryOptions, setSubCategoryCategoryOptions] = useState(
+    [],
+  );
+  const [selectedCategoryForSubCategory, setSelectedCategoryForSubCategory] =
+    useState("");
+
+  // ─── Skills State ─────────────────────────────────────────────────────────────
+  const [skills, setSkills] = useState([]);
+  const [skillsTotalItems, setSkillsTotalItems] = useState(0);
+  const [skillsPage, setSkillsPage] = useState(1);
+  const [skillNameInput, setSkillNameInput] = useState("");
+  const [editingSkill, setEditingSkill] = useState(null);
+  const [skillsLoading, setSkillsLoading] = useState(false);
+  const [skillsCategoryOptions, setSkillsCategoryOptions] = useState([]);
+  const [skillsSubCategoryOptions, setSkillsSubCategoryOptions] = useState([]);
+  const [selectedCategoryForSkills, setSelectedCategoryForSkills] =
+    useState("");
+  const [selectedSubCategoryForSkills, setSelectedSubCategoryForSkills] =
+    useState("");
+
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+  const categoryTotalPages = Math.ceil(
+    categoryTotalItems / CATEGORY_ITEMS_PER_PAGE,
+  );
+  const subCategoryTotalPages = Math.ceil(
+    subCategoryTotalItems / SUBCATEGORY_ITEMS_PER_PAGE,
+  );
+  const skillsTotalPages = Math.ceil(skillsTotalItems / SKILL_ITEMS_PER_PAGE);
 
   // ─── Fetch Jobs ───────────────────────────────────────────────────────────────
   const fetchJobs = useCallback(async (status, page) => {
@@ -91,16 +155,285 @@ const JobManagement = () => {
     }
   }, []);
 
+  // ─── Fetch Categories ─────────────────────────────────────────────────────────
+  const fetchCategories = useCallback(async () => {
+    setCategoryLoading(true);
+    try {
+      const response = await getJobCategory(
+        categoryPage,
+        CATEGORY_ITEMS_PER_PAGE,
+      );
+      console.log("response is. ====> ", response);
+      console.log("getJobCategory response:", response);
+      const list =
+        response?.data?.jobCategories ??
+        response?.jobCategories ??
+        response?.data ??
+        [];
+      const total =
+        response?.data?.totalCategories ??
+        response?.totalItems ??
+        list.length ??
+        0;
+      setCategories(list);
+      setCategoryTotalItems(total);
+    } catch (err) {
+      console.error("getJobCategory error:", err);
+    } finally {
+      setCategoryLoading(false);
+    }
+  }, [categoryPage]);
+
+  // ─── Fetch Sub Categories ─────────────────────────────────────────────────────
+  const fetchSubCategories = useCallback(async () => {
+    if (!selectedCategoryForSubCategory) {
+      setSubCategories([]);
+      setSubCategoryTotalItems(0);
+      return;
+    }
+    setSubCategoryLoading(true);
+    try {
+      const response = await getJobSubCategory(
+        selectedCategoryForSubCategory,
+        subCategoryPage,
+        SUBCATEGORY_ITEMS_PER_PAGE,
+      );
+      console.log("getJobSubCategory response:", response);
+      const list =
+        response?.data?.subCategories ??
+        response?.subCategories ??
+        response?.data ??
+        [];
+      const total =
+        response?.data?.totalItems ?? response?.totalItems ?? list.length ?? 0;
+      setSubCategories(list);
+      setSubCategoryTotalItems(total);
+    } catch (err) {
+      console.error("getJobSubCategory error:", err);
+    } finally {
+      setSubCategoryLoading(false);
+    }
+  }, [selectedCategoryForSubCategory, subCategoryPage]);
+
+  // ─── Fetch Skills ─────────────────────────────────────────────────────────────
+  const fetchSkills = useCallback(async () => {
+    if (!selectedCategoryForSkills || !selectedSubCategoryForSkills) {
+      setSkills([]);
+      setSkillsTotalItems(0);
+      return;
+    }
+    setSkillsLoading(true);
+    try {
+      const body = {
+        jobCategoryId: selectedCategoryForSkills,
+        jobSubCategoryId: selectedSubCategoryForSkills,
+        currentPage: skillsPage,
+        itemsPerPage: SKILL_ITEMS_PER_PAGE,
+      };
+      const response = await getJobSkills(body);
+      console.log("getJobSkills response:", response);
+      const list =
+        response?.data?.skills ?? response?.skills ?? response?.data ?? [];
+      const total =
+        response?.data?.totalItems ?? response?.totalItems ?? list.length ?? 0;
+      setSkills(list);
+      setSkillsTotalItems(total);
+    } catch (err) {
+      console.error("getJobSkills error:", err);
+    } finally {
+      setSkillsLoading(false);
+    }
+  }, [selectedCategoryForSkills, selectedSubCategoryForSkills, skillsPage]);
+
   // Fetch on tab or page change
   useEffect(() => {
     setSelectedJobs([]);
     fetchJobs(activeTab, currentPage);
   }, [activeTab, currentPage, fetchJobs]);
 
+  // Initial load for categories and options used in sub-category / skills
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  useEffect(() => {
+    const loadCategoryOptions = async () => {
+      try {
+        const response = await getJobCategoryForSubCategory();
+        const list =
+          response?.data?.categories ??
+          response?.categories ??
+          response?.data ??
+          [];
+        setSubCategoryCategoryOptions(list);
+        setSkillsCategoryOptions(list);
+      } catch (err) {
+        console.error("getJobCategoryForSubCategory error:", err);
+      }
+    };
+    loadCategoryOptions();
+  }, []);
+
+  useEffect(() => {
+    fetchSubCategories();
+  }, [fetchSubCategories]);
+
+  useEffect(() => {
+    fetchSkills();
+  }, [fetchSkills]);
+
+  // Load sub categories for skills when category changes
+  useEffect(() => {
+    const loadSubCategoriesForSkills = async () => {
+      if (!selectedCategoryForSkills) {
+        setSkillsSubCategoryOptions([]);
+        setSelectedSubCategoryForSkills("");
+        return;
+      }
+      try {
+        const response = await getJobSubCategoryForSkills(
+          selectedCategoryForSkills,
+        );
+        const list =
+          response?.data?.subCategories ??
+          response?.subCategories ??
+          response?.data ??
+          [];
+        setSkillsSubCategoryOptions(list);
+        setSelectedSubCategoryForSkills("");
+      } catch (err) {
+        console.error("getJobSubCategoryForSkills error:", err);
+      }
+    };
+    loadSubCategoriesForSkills();
+  }, [selectedCategoryForSkills]);
+
   // Reset to page 1 when tab changes
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setCurrentPage(1);
+  };
+
+  // ─── Category Handlers ────────────────────────────────────────────────────────
+  const handleCategorySubmit = async (e) => {
+    e.preventDefault();
+    if (!categoryNameInput.trim()) return;
+    try {
+      if (editingCategoryId) {
+        await updateJobCategory(editingCategoryId, categoryNameInput.trim());
+      } else {
+        await createJobCategory({ categoryName: categoryNameInput.trim() });
+      }
+      setCategoryNameInput("");
+      setEditingCategoryId(null);
+      fetchCategories();
+    } catch (err) {
+      console.error("Category create/update error:", err);
+    }
+  };
+
+  const handleCategoryEdit = (category) => {
+    setEditingCategoryId(category.id || category._id);
+    setCategoryNameInput(category.categoryName || "");
+  };
+
+  const handleCategoryDelete = async (category) => {
+    try {
+      await deleteJobCategory({ id: category.id || category._id });
+      fetchCategories();
+    } catch (err) {
+      console.error("Category delete error:", err);
+    }
+  };
+
+  // ─── Sub Category Handlers ────────────────────────────────────────────────────
+  const handleSubCategorySubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedCategoryForSubCategory || !subCategoryNameInput.trim()) return;
+    try {
+      if (editingSubCategory) {
+        await updateJobSubCategory(
+          editingSubCategory.id || editingSubCategory._id,
+          subCategoryNameInput.trim(),
+          selectedCategoryForSubCategory,
+        );
+      } else {
+        await createJobSubCategory({
+          jobCategoryId: selectedCategoryForSubCategory,
+          subCategoryName: [subCategoryNameInput.trim()],
+        });
+      }
+      setSubCategoryNameInput("");
+      setEditingSubCategory(null);
+      fetchSubCategories();
+    } catch (err) {
+      console.error("SubCategory create/update error:", err);
+    }
+  };
+
+  const handleSubCategoryEdit = (subCategory) => {
+    setEditingSubCategory(subCategory);
+    setSubCategoryNameInput(subCategory.subCategoryName || "");
+    if (subCategory.jobCategoryId) {
+      setSelectedCategoryForSubCategory(subCategory.jobCategoryId);
+    }
+  };
+
+  const handleSubCategoryDelete = async (subCategory) => {
+    try {
+      await deleteJobSubCategory({ id: subCategory.id || subCategory._id });
+      fetchSubCategories();
+    } catch (err) {
+      console.error("SubCategory delete error:", err);
+    }
+  };
+
+  // ─── Skills Handlers ──────────────────────────────────────────────────────────
+  const handleSkillSubmit = async (e) => {
+    e.preventDefault();
+    if (
+      !selectedCategoryForSkills ||
+      !selectedSubCategoryForSkills ||
+      !skillNameInput.trim()
+    )
+      return;
+    try {
+      const body = {
+        jobCategoryId: selectedCategoryForSkills,
+        jobSubCategoryId: selectedSubCategoryForSkills,
+        skillName: skillNameInput.trim(),
+      };
+      if (editingSkill) {
+        await updateJobSkills(editingSkill.id || editingSkill._id, body);
+      } else {
+        await createJobSkills(body);
+      }
+      setSkillNameInput("");
+      setEditingSkill(null);
+      fetchSkills();
+    } catch (err) {
+      console.error("Skill create/update error:", err);
+    }
+  };
+
+  const handleSkillEdit = (skill) => {
+    setEditingSkill(skill);
+    setSkillNameInput(skill.skillName || "");
+    if (skill.jobCategoryId) {
+      setSelectedCategoryForSkills(skill.jobCategoryId);
+    }
+    if (skill.jobSubCategoryId) {
+      setSelectedSubCategoryForSkills(skill.jobSubCategoryId);
+    }
+  };
+
+  const handleSkillDelete = async (skill) => {
+    try {
+      await deleteJobSkill({ id: skill.id || skill._id });
+      fetchSkills();
+    } catch (err) {
+      console.error("Skill delete error:", err);
+    }
   };
 
   // Client-side search filter (optional — remove if server handles search)
@@ -204,6 +537,21 @@ const JobManagement = () => {
     }
   };
 
+  const getPageNumbersGeneric = (current, total) => {
+    const pages = [];
+    const maxVisible = 5;
+    if (total <= maxVisible) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      const start = Math.max(1, current - 2);
+      const end = Math.min(total, start + maxVisible - 1);
+      if (start > 1) pages.push(1, "...");
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (end < total) pages.push("...", total);
+    }
+    return pages;
+  };
+
   // ─── Pagination helpers ───────────────────────────────────────────────────────
   const getPageNumbers = () => {
     const pages = [];
@@ -266,7 +614,348 @@ const JobManagement = () => {
               </div>
             </div>
           )}
-         
+        </div>
+      </div>
+
+      {/* Category / SubCategory / Skills Management */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Category Management */}
+        <div className="bg-white p-6 rounded-[32px] border border-brand-primary/5 shadow-soft space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-black text-brand-primary uppercase tracking-[0.2em]">
+              Job Categories
+            </h2>
+          </div>
+          <form onSubmit={handleCategorySubmit} className="space-y-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Category name"
+                className="flex-1 px-3 py-2 rounded-2xl border border-brand-primary/10 text-sm focus:outline-none focus:border-brand-primary/40"
+                value={categoryNameInput}
+                onChange={(e) => setCategoryNameInput(e.target.value)}
+              />
+              <button
+                type="submit"
+                className="px-3 py-2 rounded-2xl bg-brand-primary text-white text-xs font-bold uppercase tracking-widest flex items-center gap-1"
+              >
+                {editingCategoryId ? (
+                  <>
+                    <Pencil className="w-3 h-3" /> Update
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-3 h-3" /> Add
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+          <div className="border-t border-brand-primary/5 pt-3 space-y-2 max-h-64 overflow-y-auto">
+            {categoryLoading ? (
+              <p className="text-xs text-brand-primary/40">Loading...</p>
+            ) : categories.length === 0 ? (
+              <p className="text-xs text-brand-primary/40">
+                No categories found.
+              </p>
+            ) : (
+              categories?.map((cat) => (
+                <div
+                  key={cat.id || cat._id}
+                  className="flex items-center justify-between text-xs text-brand-primary bg-brand-primary/2 px-3 py-2 rounded-2xl"
+                >
+                  <span>{cat.categoryName}</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleCategoryEdit(cat)}
+                      className="p-1 rounded-lg hover:bg-white text-brand-primary/60"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCategoryDelete(cat)}
+                      className="p-1 rounded-lg hover:bg-white text-red-500"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          {categoryTotalPages > 1 && (
+            <div className="flex items-center justify-end gap-1 pt-2">
+              {getPageNumbersGeneric(categoryPage, categoryTotalPages).map(
+                (page, idx) =>
+                  page === "..." ? (
+                    <span
+                      key={`cat-ellipsis-${idx}`}
+                      className="w-6 text-center text-[10px] text-brand-primary/30"
+                    >
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => setCategoryPage(page)}
+                      className={`w-6 h-6 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                        categoryPage === page
+                          ? "bg-brand-primary text-white"
+                          : "text-brand-primary/40 hover:bg-brand-primary/5"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ),
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Sub Category Management */}
+        <div className="bg-white p-6 rounded-[32px] border border-brand-primary/5 shadow-soft space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-black text-brand-primary uppercase tracking-[0.2em]">
+              Job Sub Categories
+            </h2>
+          </div>
+          <form onSubmit={handleSubCategorySubmit} className="space-y-3">
+            <div className="space-y-2">
+              <select
+                className="w-full px-3 py-2 rounded-2xl border border-brand-primary/10 text-sm focus:outline-none focus:border-brand-primary/40"
+                value={selectedCategoryForSubCategory}
+                onChange={(e) => {
+                  setSelectedCategoryForSubCategory(e.target.value);
+                  setSubCategoryPage(1);
+                }}
+              >
+                <option value="">Select parent category</option>
+                {subCategoryCategoryOptions.map((cat) => (
+                  <option key={cat.id || cat._id} value={cat.id || cat._id}>
+                    {cat.categoryName}
+                  </option>
+                ))}
+              </select>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Sub category name"
+                  className="flex-1 px-3 py-2 rounded-2xl border border-brand-primary/10 text-sm focus:outline-none focus:border-brand-primary/40"
+                  value={subCategoryNameInput}
+                  onChange={(e) => setSubCategoryNameInput(e.target.value)}
+                />
+                <button
+                  type="submit"
+                  className="px-3 py-2 rounded-2xl bg-brand-primary text-white text-xs font-bold uppercase tracking-widest flex items-center gap-1"
+                >
+                  {editingSubCategory ? (
+                    <>
+                      <Pencil className="w-3 h-3" /> Update
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3 h-3" /> Add
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </form>
+          <div className="border-t border-brand-primary/5 pt-3 space-y-2 max-h-64 overflow-y-auto">
+            {subCategoryLoading ? (
+              <p className="text-xs text-brand-primary/40">Loading...</p>
+            ) : subCategories.length === 0 ? (
+              <p className="text-xs text-brand-primary/40">
+                No sub categories found.
+              </p>
+            ) : (
+              subCategories.map((sub) => (
+                <div
+                  key={sub.id || sub._id}
+                  className="flex items-center justify-between text-xs text-brand-primary bg-brand-primary/2 px-3 py-2 rounded-2xl"
+                >
+                  <span>{sub.subCategoryName}</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleSubCategoryEdit(sub)}
+                      className="p-1 rounded-lg hover:bg-white text-brand-primary/60"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSubCategoryDelete(sub)}
+                      className="p-1 rounded-lg hover:bg-white text-red-500"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          {subCategoryTotalPages > 1 && (
+            <div className="flex items-center justify-end gap-1 pt-2">
+              {getPageNumbersGeneric(
+                subCategoryPage,
+                subCategoryTotalPages,
+              ).map((page, idx) =>
+                page === "..." ? (
+                  <span
+                    key={`sub-ellipsis-${idx}`}
+                    className="w-6 text-center text-[10px] text-brand-primary/30"
+                  >
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => setSubCategoryPage(page)}
+                    className={`w-6 h-6 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                      subCategoryPage === page
+                        ? "bg-brand-primary text-white"
+                        : "text-brand-primary/40 hover:bg-brand-primary/5"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ),
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Skills Management */}
+        <div className="bg-white p-6 rounded-[32px] border border-brand-primary/5 shadow-soft space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-black text-brand-primary uppercase tracking-[0.2em]">
+              Job Skills
+            </h2>
+          </div>
+          <form onSubmit={handleSkillSubmit} className="space-y-3">
+            <div className="space-y-2">
+              <select
+                className="w-full px-3 py-2 rounded-2xl border border-brand-primary/10 text-sm focus:outline-none focus:border-brand-primary/40"
+                value={selectedCategoryForSkills}
+                onChange={(e) => {
+                  setSelectedCategoryForSkills(e.target.value);
+                  setSkillsPage(1);
+                }}
+              >
+                <option value="">Select category</option>
+                {skillsCategoryOptions.map((cat) => (
+                  <option key={cat.id || cat._id} value={cat.id || cat._id}>
+                    {cat.categoryName}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="w-full px-3 py-2 rounded-2xl border border-brand-primary/10 text-sm focus:outline-none focus:border-brand-primary/40"
+                value={selectedSubCategoryForSkills}
+                onChange={(e) => {
+                  setSelectedSubCategoryForSkills(e.target.value);
+                  setSkillsPage(1);
+                }}
+              >
+                <option value="">Select sub category</option>
+                {skillsSubCategoryOptions.map((sub) => (
+                  <option key={sub.id || sub._id} value={sub.id || sub._id}>
+                    {sub.subCategoryName}
+                  </option>
+                ))}
+              </select>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Skill name"
+                  className="flex-1 px-3 py-2 rounded-2xl border border-brand-primary/10 text-sm focus:outline-none focus:border-brand-primary/40"
+                  value={skillNameInput}
+                  onChange={(e) => setSkillNameInput(e.target.value)}
+                />
+                <button
+                  type="submit"
+                  className="px-3 py-2 rounded-2xl bg-brand-primary text-white text-xs font-bold uppercase tracking-widest flex items-center gap-1"
+                >
+                  {editingSkill ? (
+                    <>
+                      <Pencil className="w-3 h-3" /> Update
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3 h-3" /> Add
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </form>
+          <div className="border-t border-brand-primary/5 pt-3 space-y-2 max-h-64 overflow-y-auto">
+            {skillsLoading ? (
+              <p className="text-xs text-brand-primary/40">Loading...</p>
+            ) : skills.length === 0 ? (
+              <p className="text-xs text-brand-primary/40">
+                No skills found. Select category & sub category to view skills.
+              </p>
+            ) : (
+              skills.map((skill) => (
+                <div
+                  key={skill.id || skill._id}
+                  className="flex items-center justify-between text-xs text-brand-primary bg-brand-primary/2 px-3 py-2 rounded-2xl"
+                >
+                  <span>{skill.skillName}</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleSkillEdit(skill)}
+                      className="p-1 rounded-lg hover:bg-white text-brand-primary/60"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSkillDelete(skill)}
+                      className="p-1 rounded-lg hover:bg-white text-red-500"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          {skillsTotalPages > 1 && (
+            <div className="flex items-center justify-end gap-1 pt-2">
+              {getPageNumbersGeneric(skillsPage, skillsTotalPages).map(
+                (page, idx) =>
+                  page === "..." ? (
+                    <span
+                      key={`skill-ellipsis-${idx}`}
+                      className="w-6 text-center text-[10px] text-brand-primary/30"
+                    >
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => setSkillsPage(page)}
+                      className={`w-6 h-6 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                        skillsPage === page
+                          ? "bg-brand-primary text-white"
+                          : "text-brand-primary/40 hover:bg-brand-primary/5"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ),
+              )}
+            </div>
+          )}
         </div>
       </div>
 

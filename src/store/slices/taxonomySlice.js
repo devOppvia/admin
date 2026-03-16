@@ -1,29 +1,24 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-    categories: [
-        { id: 1, name: 'Web Development', subCategoriesCount: 5, createdAt: '2024-01-15T10:30:00Z' },
-        { id: 2, name: 'Mobile App Development', subCategoriesCount: 3, createdAt: '2024-02-10T14:20:00Z' },
-        { id: 3, name: 'Data Science', subCategoriesCount: 4, createdAt: '2024-03-05T09:15:00Z' },
-    ],
-    subCategories: [
-        { id: 1, categoryId: 1, name: 'React.js', createdAt: '2024-01-16T11:00:00Z', categoryName: 'Web Development' },
-        { id: 2, categoryId: 1, name: 'Node.js', createdAt: '2024-01-17T15:30:00Z', categoryName: 'Web Development' },
-        { id: 3, categoryId: 2, name: 'Flutter', createdAt: '2024-02-11T16:45:00Z', categoryName: 'Mobile App Development' },
-    ],
-    skills: [
-        { id: 1, subCategoryId: 1, name: 'Hooks' },
-        { id: 2, subCategoryId: 1, name: 'Redux' },
-        { id: 3, subCategoryId: 2, name: 'Express' },
-    ],
+    categories: [],
+    subCategories: [],
+    skills: [],
     loading: false,
     error: null,
+
 };
 
 const taxonomySlice = createSlice({
     name: 'taxonomy',
     initialState,
     reducers: {
+        setCategories: (state, action) => {
+            state.categories = action.payload;
+        },
+        setSubCategories: (state, action) => {
+            state.subCategories = action.payload;
+        },
         addCategory: (state, action) => {
             state.categories.push(action.payload);
         },
@@ -61,7 +56,7 @@ const taxonomySlice = createSlice({
     },
 });
 
-export const {
+export const {setCategories, setSubCategories,
     addCategory, updateCategory, deleteCategory,
     addSubCategory, updateSubCategory, deleteSubCategory,
     addSkill, updateSkill, deleteSkill

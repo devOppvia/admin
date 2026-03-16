@@ -1,4 +1,4 @@
-import { useSelector, useDispatch } from 'react-redux';
+import { useState, useEffect, useCallback } from 'react';
 import {
     MessageSquare,
     Search,
@@ -9,21 +9,43 @@ import {
     Globe,
     Calendar,
     AlertCircle,
-    CheckCircle2
+    Loader2
 } from 'lucide-react';
-import { useState } from 'react';
-import { deleteInquiry } from '../store/slices/supportSlice';
+import { getContactInquiryAPi } from '../helper/api_helper';
 import Modal from '../components/modals/Modal';
+import EmptyState from '../components/common/EmptyState';
 
 const ContactInquiry = () => {
-    const dispatch = useDispatch();
-    const { inquiries } = useSelector((state) => state.support);
-    const [search, setSearch] = useState('');
+    // API State
+    const [inquiries, setInquiries] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    // Modal States
+    // UI State
+    const [search, setSearch] = useState('');
     const [viewInquiry, setViewInquiry] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
+
+    // Fetch Inquiries
+    const fetchInquiries = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await getContactInquiryAPi();
+            const data = response?.data ?? [];
+            setInquiries(data);
+        } catch (err) {
+            setError('Failed to load inquiries. Please try again.');
+            console.error('getContactInquiryAPi error:', err);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchInquiries();
+    }, [fetchInquiries]);
 
     const filteredInquiries = inquiries.filter(item =>
         item.fullName.toLowerCase().includes(search.toLowerCase()) ||
@@ -33,7 +55,7 @@ const ContactInquiry = () => {
 
     const handleConfirmDelete = () => {
         if (itemToDelete) {
-            dispatch(deleteInquiry(itemToDelete.id));
+            setInquiries(prev => prev.filter(item => item.id !== itemToDelete.id));
             setShowDeleteModal(false);
             setItemToDelete(null);
         }
@@ -76,7 +98,22 @@ const ContactInquiry = () => {
 
                 {/* Table */}
                 <div className="overflow-x-auto no-scrollbar">
-                    <table className="w-full border-separate border-spacing-y-4">
+                    {loading ? (
+                        <div className="flex items-center justify-center py-20">
+                            <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
+                        </div>
+                    ) : error ? (
+                        <div className="text-center py-20">
+                            <p className="text-red-500 text-sm font-medium">{error}</p>
+                        </div>
+                    ) : filteredInquiries.length === 0 ? (
+                        <EmptyState
+                            icon={MessageSquare}
+                            title="No inquiries found"
+                            description={search ? "Try adjusting your search criteria" : "Contact inquiries will appear here"}
+                        />
+                    ) : (
+                        <table className="w-full border-separate border-spacing-y-4">
                         <thead>
                             <tr className="text-[10px] font-black text-brand-primary/20 uppercase tracking-[0.2em]">
                                 <th className="text-left px-6 py-2">Date</th>
@@ -131,6 +168,7 @@ const ContactInquiry = () => {
                             ))}
                         </tbody>
                     </table>
+                    )}
                 </div>
             </div>
 

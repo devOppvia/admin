@@ -1,4 +1,175 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { getAllBlogsApi, deleteBlogsApi, createBlogCategoryApi, updateBlogCategoryApi, getBlogCategoriesApi, deleteBlogcategoryApi, createBlogTagsApi, updateBlogTagsApi, getBlogTagsApi, deleteBlogTagsApi } from '../../helper/api_helper';
+
+// Async thunk for fetching all categories
+export const fetchCategories = createAsyncThunk(
+    'blogs/fetchCategories',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await getBlogCategoriesApi();
+            if (response.status) {
+                return response.data;
+            } else {
+                return rejectWithValue(response.message || 'Failed to fetch categories');
+            }
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to fetch categories');
+        }
+    }
+);
+
+// Async thunk for creating a category
+export const createCategory = createAsyncThunk(
+    'blogs/createCategory',
+    async (categoryData, { rejectWithValue }) => {
+        try {
+            const response = await createBlogCategoryApi(categoryData);
+            if (response.status) {
+                return response.data;
+            } else {
+                return rejectWithValue(response.message || 'Failed to create category');
+            }
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to create category');
+        }
+    }
+);
+
+// Async thunk for updating a category
+export const updateCategoryAsync = createAsyncThunk(
+    'blogs/updateCategoryAsync',
+    async (categoryData, { rejectWithValue }) => {
+        try {
+            const response = await updateBlogCategoryApi(categoryData);
+            if (response.status) {
+                return response.data;
+            } else {
+                return rejectWithValue(response.message || 'Failed to update category');
+            }
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to update category');
+        }
+    }
+);
+
+// Async thunk for deleting a category
+export const deleteCategoryAsync = createAsyncThunk(
+    'blogs/deleteCategoryAsync',
+    async (id, { rejectWithValue }) => {
+        try {
+            const response = await deleteBlogcategoryApi({ id });
+            if (response.status) {
+                return id;
+            } else {
+                return rejectWithValue(response.message || 'Failed to delete category');
+            }
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to delete category');
+        }
+    }
+);
+
+// Async thunk for fetching all tags
+export const fetchTags = createAsyncThunk(
+    'blogs/fetchTags',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await getBlogTagsApi();
+            if (response.status) {
+                return response.data;
+            } else {
+                return rejectWithValue(response.message || 'Failed to fetch tags');
+            }
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to fetch tags');
+        }
+    }
+);
+
+// Async thunk for creating a tag
+export const createTag = createAsyncThunk(
+    'blogs/createTag',
+    async (tagData, { rejectWithValue }) => {
+        try {
+            const response = await createBlogTagsApi(tagData);
+            if (response.status) {
+                return response.data;
+            } else {
+                return rejectWithValue(response.message || 'Failed to create tag');
+            }
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to create tag');
+        }
+    }
+);
+
+// Async thunk for updating a tag
+export const updateTagAsync = createAsyncThunk(
+    'blogs/updateTagAsync',
+    async (tagData, { rejectWithValue }) => {
+        try {
+            const response = await updateBlogTagsApi(tagData);
+            if (response.status) {
+                return response.data;
+            } else {
+                return rejectWithValue(response.message || 'Failed to update tag');
+            }
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to update tag');
+        }
+    }
+);
+
+// Async thunk for deleting a tag
+export const deleteTagAsync = createAsyncThunk(
+    'blogs/deleteTagAsync',
+    async (id, { rejectWithValue }) => {
+        try {
+            const response = await deleteBlogTagsApi({ id });
+            if (response.status) {
+                return id;
+            } else {
+                return rejectWithValue(response.message || 'Failed to delete tag');
+            }
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to delete tag');
+        }
+    }
+);
+
+// Async thunk for fetching all blogs
+export const fetchBlogs = createAsyncThunk(
+    'blogs/fetchBlogs',
+    async (userData, { rejectWithValue }) => {
+        try {
+            const response = await getAllBlogsApi(userData);
+            if (response.status) {
+                return response.data.blogs;
+            } else {
+                return rejectWithValue(response.message || 'Failed to fetch blogs');
+            }
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to fetch blogs');
+        }
+    }
+);
+
+// Async thunk for deleting a blog
+export const deleteBlog = createAsyncThunk(
+    'blogs/deleteBlog',
+    async (id, { rejectWithValue }) => {
+        try {
+            const response = await deleteBlogsApi({ id });
+            if (response.status) {
+                return id;
+            } else {
+                return rejectWithValue(response.message || 'Failed to delete blog');
+            }
+        } catch (error) {
+            return rejectWithValue(error.message || 'Failed to delete blog');
+        }
+    }
+);
 
 const initialState = {
     posts: [
@@ -71,8 +242,119 @@ const blogSlice = createSlice({
         deletePost: (state, action) => {
             state.posts = state.posts.filter(p => p.id !== action.payload);
         },
+        // Category CRUD
+        addCategory: (state, action) => {
+            state.categories.push(action.payload);
+        },
+        updateCategory: (state, action) => {
+            const index = state.categories.findIndex(c => c === action.payload.oldName);
+            if (index !== -1) {
+                state.categories[index] = action.payload.newName;
+            }
+        },
+        deleteCategory: (state, action) => {
+            state.categories = state.categories.filter(c => c !== action.payload);
+        },
+        // Tag CRUD
+        addTag: (state, action) => {
+            state.tags.push(action.payload);
+        },
+        updateTag: (state, action) => {
+            const index = state.tags.findIndex(t => t === action.payload.oldName);
+            if (index !== -1) {
+                state.tags[index] = action.payload.newName;
+            }
+        },
+        deleteTag: (state, action) => {
+            state.tags = state.tags.filter(t => t !== action.payload);
+        },
+    },
+    extraReducers: (builder) => {
+        builder
+            // Fetch blogs
+            .addCase(fetchBlogs.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchBlogs.fulfilled, (state, action) => {
+                state.loading = false;
+                state.posts = action.payload;
+            })
+            .addCase(fetchBlogs.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            // Delete blog
+            .addCase(deleteBlog.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(deleteBlog.fulfilled, (state, action) => {
+                state.loading = false;
+                state.posts = state.posts.filter(p => p.id !== action.payload);
+            })
+            .addCase(deleteBlog.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            // Fetch categories
+            .addCase(fetchCategories.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchCategories.fulfilled, (state, action) => {
+                state.loading = false;
+                state.categories = action.payload;
+            })
+            .addCase(fetchCategories.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            // Create category
+            .addCase(createCategory.fulfilled, (state, action) => {
+                state.categories.push(action.payload);
+            })
+            // Update category
+            .addCase(updateCategoryAsync.fulfilled, (state, action) => {
+                const index = state.categories.findIndex(c => c.id === action.payload.id);
+                if (index !== -1) {
+                    state.categories[index] = action.payload;
+                }
+            })
+            // Delete category
+            .addCase(deleteCategoryAsync.fulfilled, (state, action) => {
+                state.categories = state.categories.filter(c => c.id !== action.payload);
+            })
+            // Fetch tags
+            .addCase(fetchTags.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchTags.fulfilled, (state, action) => {
+                state.loading = false;
+                state.tags = action.payload;
+            })
+            .addCase(fetchTags.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            // Create tag
+            .addCase(createTag.fulfilled, (state, action) => {
+                state.tags.push(action.payload);
+            })
+            // Update tag
+            .addCase(updateTagAsync.fulfilled, (state, action) => {
+                const index = state.tags.findIndex(t => t.id === action.payload.id);
+                if (index !== -1) {
+                    state.tags[index] = action.payload;
+                }
+            })
+            // Delete tag
+            .addCase(deleteTagAsync.fulfilled, (state, action) => {
+                state.tags = state.tags.filter(t => t.id !== action.payload);
+            });
     },
 });
 
-export const { addPost, updatePost, deletePost } = blogSlice.actions;
+export const { addPost, updatePost, deletePost, addCategory, updateCategory, deleteCategory, addTag, updateTag, deleteTag } = blogSlice.actions;
 export default blogSlice.reducer;

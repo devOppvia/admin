@@ -14,6 +14,8 @@ import ChatMessage from './pages/ChatMessage';
 import ContactInquiry from './pages/ContactInquiry';
 import SubscriptionManagement from './pages/SubscriptionManagement';
 import LoginPage from './pages/LoginPage';
+import SkillsManagement from './pages/SkillsManagement';
+import ProtectedRoute from './authRoute/ProtectedRoute';
 
 function App() {
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -25,14 +27,14 @@ function App() {
         <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" />} />
 
         {/* Protected Routes */}
-        <Route path="/" element={isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" />}>
+        <Route path="/" element={isAuthenticated ? <ProtectedRoute><DashboardLayout /></ProtectedRoute> : <Navigate to="/login" />}>
           <Route index element={<Navigate to="/dashboard" />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="companies" element={<CompanyManagement />} />
           <Route path="jobs" element={<JobManagement />} />
           {/* <Route path="resume-bank" element={<ResumeBank />} /> */}
           <Route path="job-category" element={<TaxonomyManagement />} />
-          <Route path="skill-management" element={<TaxonomyManagement />} />
+          <Route path="skill-management" element={<SkillsManagement />} />
           <Route path="blog" element={<BlogManagement />} />
           <Route path="blog/create" element={<CreateBlogPost />} />
           <Route path="blog/edit/:id" element={<CreateBlogPost />} />
