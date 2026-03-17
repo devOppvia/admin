@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   IndianRupee,
+  AlertCircle,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import StatusTabs from "../components/common/StatusTabs";
@@ -153,6 +154,7 @@ const JobManagement = () => {
   };
 
   const handleRejectSubmit = async () => {
+    console.log("resosne : ", rejectReason);
     if (!rejectReason.trim()) return;
     try {
       await changeJobStatus(
@@ -451,19 +453,21 @@ const JobManagement = () => {
                             <Eye className="w-5 h-5" />
                           </button> */}
                           <div className="relative inline-block">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenDropdownId(
-                                  openDropdownId === job.id ? null : job.id,
-                                );
-                              }}
-                              className="p-2 text-brand-primary/40 hover:bg-white rounded-xl transition-all shadow-hover-sm"
-                            >
-                              <MoreVertical className="w-5 h-5" />
-                            </button>
+                            {jobStatus !== "REJECTED" && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenDropdownId(
+                                    openDropdownId === job.id ? null : job.id,
+                                  );
+                                }}
+                                className="p-2 text-brand-primary/40 hover:bg-white rounded-xl transition-all shadow-hover-sm"
+                              >
+                                <MoreVertical className="w-5 h-5" />
+                              </button>
+                            )}
                             {openDropdownId === job.id && (
-                              <div className="absolute right-0  -bottom-12  mb-2 w-44 bg-white rounded-2xl shadow-xl border border-brand-primary/5 py-2 z-[1000]">
+                              <div className="absolute right-0  -bottom-12  mb-2 w-44 bg-white rounded-2xl shadow-xl border border-brand-primary/5 py-2 z-10">
                                 {jobStatus === "REVIEW" && (
                                   <>
                                     <button
@@ -657,6 +661,55 @@ const JobManagement = () => {
 
       {/* Reject Modal */}
       {isRejectModalOpen && (
+        // <Modal
+        //   isOpen={isRejectModalOpen}
+        //   onClose={() => {
+        //     setIsRejectModalOpen(false);
+        //     setRejectReason("");
+        //   }}
+        //   title="Reject Job Posting"
+        // >
+        //   <div className="space-y-4 py-4 px-6">
+        //     <div className="p-4 bg-red-50 rounded-2xl flex items-start gap-3 border border-red-100">
+        //       <XCircle className="w-5 h-5 text-red-600 shrink-0" />
+        //       <div>
+        //         <p className="text-xs font-bold text-red-900 uppercase tracking-tight">
+        //           You are rejecting: {currentJobToReject?.jobTitle}
+        //         </p>
+        //         <p className="text-[10px] text-red-700/70 font-medium">
+        //           Please provide a reason. This will be shared with the company.
+        //         </p>
+        //       </div>
+        //     </div>
+        //     <div>
+        //       <label className="block text-[10px] font-black text-brand-primary/40 uppercase tracking-[0.2em] mb-3 ml-1">
+        //         Rejection Reason
+        //       </label>
+        //       <textarea
+        //         value={rejectReason}
+        //         onChange={(e) => setRejectReason(e.target.value)}
+        //         className="w-full bg-brand-primary/3 border border-transparent rounded-2xl p-4 text-sm text-brand-primary placeholder:text-brand-primary/20 focus:bg-white focus:border-brand-primary/10 transition-all min-h-[120px]"
+        //         placeholder="E.g., Incomplete job description, skills mismatch, suspicious content..."
+        //       />
+        //     </div>
+        //     <div className="flex gap-3 w-full">
+        //       <button
+        //         onClick={() => setIsRejectModalOpen(false)}
+        //         className="flex-1 py-3 bg-brand-primary/5 text-brand-primary rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:bg-brand-primary/10 transition-all"
+        //       >
+        //         Cancel
+        //       </button>
+        //       <button
+        //         onClick={handleRejectSubmit}
+        //         disabled={!rejectReason.trim()}
+        //         className="flex-1 py-3 bg-red-600 text-white rounded-2xl font-bold text-[10px] uppercase tracking-widest shadow-premium hover:bg-red-700 transition-all disabled:opacity-50"
+        //       >
+        //         Confirm Rejection
+        //       </button>
+        //     </div>
+        //   </div>
+        // </Modal>
+
         <Modal
           isOpen={isRejectModalOpen}
           onClose={() => {
@@ -664,46 +717,56 @@ const JobManagement = () => {
             setRejectReason("");
           }}
           title="Reject Job Posting"
-          footer={
-            <div className="flex gap-3 w-full">
+          maxWidth="600px"
+        >
+          <div className="p-8 space-y-6">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-red-500">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+              <div>
+                <h4 className="text-lg font-black text-brand-primary leading-tight">
+                  Remove this category?
+                </h4>
+                <p className="text-sm text-brand-primary/40 mt-1">
+                  You are about to delete{" "}
+                  <span className="font-bold text-brand-primary">
+                    "
+                    {currentJobToReject?.jobTitle ||
+                      currentJobToReject?.name ||
+                      currentJobToReject}
+                    "
+                  </span>
+                  . This action cannot be undone.
+                </p>
+
+                <div className="flex flex-col gap-2 mt-4 items-start">
+                  <label className="block text-[10px] font-black text-brand-primary/40 uppercase tracking-[0.2em] mb-3 ml-1">
+                    Rejection Reason
+                  </label>
+                  <textarea
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    className="w-full bg-brand-primary/3 border border-transparent rounded-2xl p-4 text-sm text-brand-primary placeholder:text-brand-primary/20 focus:bg-white focus:border-brand-primary/10 transition-all min-h-[120px]"
+                    placeholder="E.g., Incomplete job description, skills mismatch, suspicious content..."
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsRejectModalOpen(false)}
-                className="flex-1 py-3 bg-brand-primary/5 text-brand-primary rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:bg-brand-primary/10 transition-all"
+                className="flex-1 px-6 py-4 bg-brand-primary/5 text-brand-primary rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-primary/10 transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleRejectSubmit}
                 disabled={!rejectReason.trim()}
-                className="flex-1 py-3 bg-red-600 text-white rounded-2xl font-bold text-[10px] uppercase tracking-widest shadow-premium hover:bg-red-700 transition-all disabled:opacity-50"
+                className="flex-1 px-6 py-4 bg-red-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20 hover:bg-red-600 transition-all"
               >
-                Confirm Rejection
+                Confirm Delete
               </button>
-            </div>
-          }
-        >
-          <div className="space-y-4 py-2">
-            <div className="p-4 bg-red-50 rounded-2xl flex items-start gap-3 border border-red-100">
-              <XCircle className="w-5 h-5 text-red-600 shrink-0" />
-              <div>
-                <p className="text-xs font-bold text-red-900 uppercase tracking-tight">
-                  You are rejecting: {currentJobToReject?.jobTitle}
-                </p>
-                <p className="text-[10px] text-red-700/70 font-medium">
-                  Please provide a reason. This will be shared with the company.
-                </p>
-              </div>
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-brand-primary/40 uppercase tracking-[0.2em] mb-3 ml-1">
-                Rejection Reason
-              </label>
-              <textarea
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                className="w-full bg-brand-primary/3 border border-transparent rounded-2xl p-4 text-sm text-brand-primary placeholder:text-brand-primary/20 focus:bg-white focus:border-brand-primary/10 transition-all min-h-[120px]"
-                placeholder="E.g., Incomplete job description, skills mismatch, suspicious content..."
-              />
             </div>
           </div>
         </Modal>
