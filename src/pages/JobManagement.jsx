@@ -1,5 +1,5 @@
 import { useDispatch } from "react-redux";
-import { updateJobStatus, deleteJob } from "../store/slices/jobSlice";
+import { deleteJob } from "../store/slices/jobSlice";
 import {
   Briefcase,
   Search,
@@ -17,8 +17,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Plus,
-  Pencil,
+  IndianRupee,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import StatusTabs from "../components/common/StatusTabs";
@@ -26,28 +25,9 @@ import EmptyState from "../components/common/EmptyState";
 import Modal from "../components/modals/Modal";
 import Checkbox from "../components/common/Checkbox";
 import JobDetailsModal from "../components/modals/JobDetailsModal";
-import {
-  getJobPositions,
-  getJobCategory,
-  createJobCategory,
-  updateJobCategory,
-  deleteJobCategory,
-  getJobCategoryForSubCategory,
-  createJobSubCategory,
-  getJobSubCategory,
-  updateJobSubCategory,
-  deleteJobSubCategory,
-  getJobSkills,
-  createJobSkills,
-  updateJobSkills,
-  deleteJobSkill,
-  getJobSubCategoryForSkills,
-} from "../helper/api_helper";
+import { getJobPositions, changeJobStatus } from "../helper/api_helper";
 
 const ITEMS_PER_PAGE = 5;
-const CATEGORY_ITEMS_PER_PAGE = 10;
-const SUBCATEGORY_ITEMS_PER_PAGE = 10;
-const SKILL_ITEMS_PER_PAGE = 10;
 
 const internStatus = [
   { label: "All", value: "", icon: "mdi:briefcase-search-outline" },
@@ -80,51 +60,9 @@ const JobManagement = () => {
   const [rejectReason, setRejectReason] = useState("");
   const [currentJobToReject, setCurrentJobToReject] = useState(null);
   const [selectedJobView, setSelectedJobView] = useState(null);
-
-  // ─── Category State ────────────────────────────────────────────────────────────
-  const [categories, setCategories] = useState([]);
-  const [categoryTotalItems, setCategoryTotalItems] = useState(0);
-  const [categoryPage, setCategoryPage] = useState(1);
-  const [categoryNameInput, setCategoryNameInput] = useState("");
-  const [editingCategoryId, setEditingCategoryId] = useState(null);
-  const [categoryLoading, setCategoryLoading] = useState(false);
-
-  // ─── Sub Category State ───────────────────────────────────────────────────────
-  const [subCategories, setSubCategories] = useState([]);
-  const [subCategoryTotalItems, setSubCategoryTotalItems] = useState(0);
-  const [subCategoryPage, setSubCategoryPage] = useState(1);
-  const [subCategoryNameInput, setSubCategoryNameInput] = useState("");
-  const [editingSubCategory, setEditingSubCategory] = useState(null);
-  const [subCategoryLoading, setSubCategoryLoading] = useState(false);
-  const [subCategoryCategoryOptions, setSubCategoryCategoryOptions] = useState(
-    [],
-  );
-  const [selectedCategoryForSubCategory, setSelectedCategoryForSubCategory] =
-    useState("");
-
-  // ─── Skills State ─────────────────────────────────────────────────────────────
-  const [skills, setSkills] = useState([]);
-  const [skillsTotalItems, setSkillsTotalItems] = useState(0);
-  const [skillsPage, setSkillsPage] = useState(1);
-  const [skillNameInput, setSkillNameInput] = useState("");
-  const [editingSkill, setEditingSkill] = useState(null);
-  const [skillsLoading, setSkillsLoading] = useState(false);
-  const [skillsCategoryOptions, setSkillsCategoryOptions] = useState([]);
-  const [skillsSubCategoryOptions, setSkillsSubCategoryOptions] = useState([]);
-  const [selectedCategoryForSkills, setSelectedCategoryForSkills] =
-    useState("");
-  const [selectedSubCategoryForSkills, setSelectedSubCategoryForSkills] =
-    useState("");
+  const [openDropdownId, setOpenDropdownId] = useState(null);
 
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-
-  const categoryTotalPages = Math.ceil(
-    categoryTotalItems / CATEGORY_ITEMS_PER_PAGE,
-  );
-  const subCategoryTotalPages = Math.ceil(
-    subCategoryTotalItems / SUBCATEGORY_ITEMS_PER_PAGE,
-  );
-  const skillsTotalPages = Math.ceil(skillsTotalItems / SKILL_ITEMS_PER_PAGE);
 
   // ─── Fetch Jobs ───────────────────────────────────────────────────────────────
   const fetchJobs = useCallback(async (status, page) => {
@@ -142,6 +80,11 @@ const JobManagement = () => {
 
       const jobsList = response?.data?.jobs ?? response?.jobs ?? [];
 
+      // Debug: Log first job's status to verify field name
+      if (jobsList.length > 0) {
+        console.log("First job status field:", jobsList[0]);
+      }
+
       const total = response?.data?.totalJobs;
       jobsList.length; // fallback: keeps pagination working even if field name is unknown
 
@@ -155,285 +98,24 @@ const JobManagement = () => {
     }
   }, []);
 
-  // ─── Fetch Categories ─────────────────────────────────────────────────────────
-  const fetchCategories = useCallback(async () => {
-    setCategoryLoading(true);
-    try {
-      const response = await getJobCategory(
-        categoryPage,
-        CATEGORY_ITEMS_PER_PAGE,
-      );
-      console.log("response is. ====> ", response);
-      console.log("getJobCategory response:", response);
-      const list =
-        response?.data?.jobCategories ??
-        response?.jobCategories ??
-        response?.data ??
-        [];
-      const total =
-        response?.data?.totalCategories ??
-        response?.totalItems ??
-        list.length ??
-        0;
-      setCategories(list);
-      setCategoryTotalItems(total);
-    } catch (err) {
-      console.error("getJobCategory error:", err);
-    } finally {
-      setCategoryLoading(false);
-    }
-  }, [categoryPage]);
-
-  // ─── Fetch Sub Categories ─────────────────────────────────────────────────────
-  const fetchSubCategories = useCallback(async () => {
-    if (!selectedCategoryForSubCategory) {
-      setSubCategories([]);
-      setSubCategoryTotalItems(0);
-      return;
-    }
-    setSubCategoryLoading(true);
-    try {
-      const response = await getJobSubCategory(
-        selectedCategoryForSubCategory,
-        subCategoryPage,
-        SUBCATEGORY_ITEMS_PER_PAGE,
-      );
-      console.log("getJobSubCategory response:", response);
-      const list =
-        response?.data?.subCategories ??
-        response?.subCategories ??
-        response?.data ??
-        [];
-      const total =
-        response?.data?.totalItems ?? response?.totalItems ?? list.length ?? 0;
-      setSubCategories(list);
-      setSubCategoryTotalItems(total);
-    } catch (err) {
-      console.error("getJobSubCategory error:", err);
-    } finally {
-      setSubCategoryLoading(false);
-    }
-  }, [selectedCategoryForSubCategory, subCategoryPage]);
-
-  // ─── Fetch Skills ─────────────────────────────────────────────────────────────
-  const fetchSkills = useCallback(async () => {
-    if (!selectedCategoryForSkills || !selectedSubCategoryForSkills) {
-      setSkills([]);
-      setSkillsTotalItems(0);
-      return;
-    }
-    setSkillsLoading(true);
-    try {
-      const body = {
-        jobCategoryId: selectedCategoryForSkills,
-        jobSubCategoryId: selectedSubCategoryForSkills,
-        currentPage: skillsPage,
-        itemsPerPage: SKILL_ITEMS_PER_PAGE,
-      };
-      const response = await getJobSkills(body);
-      console.log("getJobSkills response:", response);
-      const list =
-        response?.data?.skills ?? response?.skills ?? response?.data ?? [];
-      const total =
-        response?.data?.totalItems ?? response?.totalItems ?? list.length ?? 0;
-      setSkills(list);
-      setSkillsTotalItems(total);
-    } catch (err) {
-      console.error("getJobSkills error:", err);
-    } finally {
-      setSkillsLoading(false);
-    }
-  }, [selectedCategoryForSkills, selectedSubCategoryForSkills, skillsPage]);
-
   // Fetch on tab or page change
   useEffect(() => {
     setSelectedJobs([]);
+    setOpenDropdownId(null);
     fetchJobs(activeTab, currentPage);
   }, [activeTab, currentPage, fetchJobs]);
 
-  // Initial load for categories and options used in sub-category / skills
+  // Close dropdown when clicking outside
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
-
-  useEffect(() => {
-    const loadCategoryOptions = async () => {
-      try {
-        const response = await getJobCategoryForSubCategory();
-        const list =
-          response?.data?.categories ??
-          response?.categories ??
-          response?.data ??
-          [];
-        setSubCategoryCategoryOptions(list);
-        setSkillsCategoryOptions(list);
-      } catch (err) {
-        console.error("getJobCategoryForSubCategory error:", err);
-      }
-    };
-    loadCategoryOptions();
+    const handleClickOutside = () => setOpenDropdownId(null);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
-
-  useEffect(() => {
-    fetchSubCategories();
-  }, [fetchSubCategories]);
-
-  useEffect(() => {
-    fetchSkills();
-  }, [fetchSkills]);
-
-  // Load sub categories for skills when category changes
-  useEffect(() => {
-    const loadSubCategoriesForSkills = async () => {
-      if (!selectedCategoryForSkills) {
-        setSkillsSubCategoryOptions([]);
-        setSelectedSubCategoryForSkills("");
-        return;
-      }
-      try {
-        const response = await getJobSubCategoryForSkills(
-          selectedCategoryForSkills,
-        );
-        const list =
-          response?.data?.subCategories ??
-          response?.subCategories ??
-          response?.data ??
-          [];
-        setSkillsSubCategoryOptions(list);
-        setSelectedSubCategoryForSkills("");
-      } catch (err) {
-        console.error("getJobSubCategoryForSkills error:", err);
-      }
-    };
-    loadSubCategoriesForSkills();
-  }, [selectedCategoryForSkills]);
 
   // Reset to page 1 when tab changes
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setCurrentPage(1);
-  };
-
-  // ─── Category Handlers ────────────────────────────────────────────────────────
-  const handleCategorySubmit = async (e) => {
-    e.preventDefault();
-    if (!categoryNameInput.trim()) return;
-    try {
-      if (editingCategoryId) {
-        await updateJobCategory(editingCategoryId, categoryNameInput.trim());
-      } else {
-        await createJobCategory({ categoryName: categoryNameInput.trim() });
-      }
-      setCategoryNameInput("");
-      setEditingCategoryId(null);
-      fetchCategories();
-    } catch (err) {
-      console.error("Category create/update error:", err);
-    }
-  };
-
-  const handleCategoryEdit = (category) => {
-    setEditingCategoryId(category.id || category._id);
-    setCategoryNameInput(category.categoryName || "");
-  };
-
-  const handleCategoryDelete = async (category) => {
-    try {
-      await deleteJobCategory({ id: category.id || category._id });
-      fetchCategories();
-    } catch (err) {
-      console.error("Category delete error:", err);
-    }
-  };
-
-  // ─── Sub Category Handlers ────────────────────────────────────────────────────
-  const handleSubCategorySubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedCategoryForSubCategory || !subCategoryNameInput.trim()) return;
-    try {
-      if (editingSubCategory) {
-        await updateJobSubCategory(
-          editingSubCategory.id || editingSubCategory._id,
-          subCategoryNameInput.trim(),
-          selectedCategoryForSubCategory,
-        );
-      } else {
-        await createJobSubCategory({
-          jobCategoryId: selectedCategoryForSubCategory,
-          subCategoryName: [subCategoryNameInput.trim()],
-        });
-      }
-      setSubCategoryNameInput("");
-      setEditingSubCategory(null);
-      fetchSubCategories();
-    } catch (err) {
-      console.error("SubCategory create/update error:", err);
-    }
-  };
-
-  const handleSubCategoryEdit = (subCategory) => {
-    setEditingSubCategory(subCategory);
-    setSubCategoryNameInput(subCategory.subCategoryName || "");
-    if (subCategory.jobCategoryId) {
-      setSelectedCategoryForSubCategory(subCategory.jobCategoryId);
-    }
-  };
-
-  const handleSubCategoryDelete = async (subCategory) => {
-    try {
-      await deleteJobSubCategory({ id: subCategory.id || subCategory._id });
-      fetchSubCategories();
-    } catch (err) {
-      console.error("SubCategory delete error:", err);
-    }
-  };
-
-  // ─── Skills Handlers ──────────────────────────────────────────────────────────
-  const handleSkillSubmit = async (e) => {
-    e.preventDefault();
-    if (
-      !selectedCategoryForSkills ||
-      !selectedSubCategoryForSkills ||
-      !skillNameInput.trim()
-    )
-      return;
-    try {
-      const body = {
-        jobCategoryId: selectedCategoryForSkills,
-        jobSubCategoryId: selectedSubCategoryForSkills,
-        skillName: skillNameInput.trim(),
-      };
-      if (editingSkill) {
-        await updateJobSkills(editingSkill.id || editingSkill._id, body);
-      } else {
-        await createJobSkills(body);
-      }
-      setSkillNameInput("");
-      setEditingSkill(null);
-      fetchSkills();
-    } catch (err) {
-      console.error("Skill create/update error:", err);
-    }
-  };
-
-  const handleSkillEdit = (skill) => {
-    setEditingSkill(skill);
-    setSkillNameInput(skill.skillName || "");
-    if (skill.jobCategoryId) {
-      setSelectedCategoryForSkills(skill.jobCategoryId);
-    }
-    if (skill.jobSubCategoryId) {
-      setSelectedSubCategoryForSkills(skill.jobSubCategoryId);
-    }
-  };
-
-  const handleSkillDelete = async (skill) => {
-    try {
-      await deleteJobSkill({ id: skill.id || skill._id });
-      fetchSkills();
-    } catch (err) {
-      console.error("Skill delete error:", err);
-    }
   };
 
   // Client-side search filter (optional — remove if server handles search)
@@ -454,56 +136,70 @@ const JobManagement = () => {
     setIsRejectModalOpen(true);
   };
 
-  const handleStatusUpdate = (id, status) => {
+  const handleStatusUpdate = async (id, status) => {
     if (status === "REJECTED") {
       const job = jobs.find((j) => j.id === id);
       handleRejectClick(job);
       return;
     }
-    dispatch(updateJobStatus({ id, status }));
-    // Optimistic UI update in local list
-    setJobs((prev) =>
-      prev.map((j) => (j.id === id ? { ...j, jobStatus: status } : j)),
-    );
+    try {
+      await changeJobStatus(id, status);
+      setJobs((prev) =>
+        prev.map((j) => (j.id === id ? { ...j, jobStatus: status } : j)),
+      );
+    } catch (err) {
+      console.error("Error updating status:", err);
+    }
   };
 
-  const handleRejectSubmit = () => {
+  const handleRejectSubmit = async () => {
     if (!rejectReason.trim()) return;
-    dispatch(
-      updateJobStatus({
-        id: currentJobToReject.id,
-        status: "REJECTED",
-        rejectReason: rejectReason.trim(),
-      }),
-    );
-    setJobs((prev) =>
-      prev.map((j) =>
-        j.id === currentJobToReject.id
-          ? { ...j, jobStatus: "REJECTED", rejectReason: rejectReason.trim() }
-          : j,
-      ),
-    );
-    setIsRejectModalOpen(false);
-    setRejectReason("");
-    setCurrentJobToReject(null);
-    if (selectedJobView) setSelectedJobView(null);
+    try {
+      await changeJobStatus(
+        currentJobToReject.id,
+        "REJECTED",
+        rejectReason.trim(),
+      );
+      setJobs((prev) =>
+        prev.map((j) =>
+          j.id === currentJobToReject.id
+            ? { ...j, jobStatus: "REJECTED", rejectReason: rejectReason.trim() }
+            : j,
+        ),
+      );
+      setIsRejectModalOpen(false);
+      setRejectReason("");
+      setCurrentJobToReject(null);
+      if (selectedJobView) setSelectedJobView(null);
+    } catch (err) {
+      console.error("Error rejecting job:", err);
+    }
   };
 
-  const handleApproveFromModal = (id) => {
-    dispatch(updateJobStatus({ id, status: "APPROVED" }));
-    setJobs((prev) =>
-      prev.map((j) => (j.id === id ? { ...j, jobStatus: "APPROVED" } : j)),
-    );
-    setSelectedJobView(null);
+  const handleApproveFromModal = async (id) => {
+    try {
+      await changeJobStatus(id, "APPROVED");
+      setJobs((prev) =>
+        prev.map((j) => (j.id === id ? { ...j, jobStatus: "APPROVED" } : j)),
+      );
+      setSelectedJobView(null);
+    } catch (err) {
+      console.error("Error approving job:", err);
+    }
   };
 
-  const handleBulkStatusChange = (status) => {
-    setJobs((prev) =>
-      prev.map((j) =>
-        selectedJobs.includes(j.id) ? { ...j, jobStatus: status } : j,
-      ),
-    );
-    setSelectedJobs([]);
+  const handleBulkStatusChange = async (status) => {
+    try {
+      await Promise.all(selectedJobs.map((id) => changeJobStatus(id, status)));
+      setJobs((prev) =>
+        prev.map((j) =>
+          selectedJobs.includes(j.id) ? { ...j, jobStatus: status } : j,
+        ),
+      );
+      setSelectedJobs([]);
+    } catch (err) {
+      console.error("Error updating bulk status:", err);
+    }
   };
 
   const handleSelectJob = (id) => {
@@ -535,21 +231,6 @@ const JobManagement = () => {
       default:
         return "bg-gray-100 text-gray-700";
     }
-  };
-
-  const getPageNumbersGeneric = (current, total) => {
-    const pages = [];
-    const maxVisible = 5;
-    if (total <= maxVisible) {
-      for (let i = 1; i <= total; i++) pages.push(i);
-    } else {
-      const start = Math.max(1, current - 2);
-      const end = Math.min(total, start + maxVisible - 1);
-      if (start > 1) pages.push(1, "...");
-      for (let i = start; i <= end; i++) pages.push(i);
-      if (end < total) pages.push("...", total);
-    }
-    return pages;
   };
 
   // ─── Pagination helpers ───────────────────────────────────────────────────────
@@ -612,348 +293,6 @@ const JobManagement = () => {
                   </button>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Category / SubCategory / Skills Management */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Category Management */}
-        <div className="bg-white p-6 rounded-[32px] border border-brand-primary/5 shadow-soft space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black text-brand-primary uppercase tracking-[0.2em]">
-              Job Categories
-            </h2>
-          </div>
-          <form onSubmit={handleCategorySubmit} className="space-y-3">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Category name"
-                className="flex-1 px-3 py-2 rounded-2xl border border-brand-primary/10 text-sm focus:outline-none focus:border-brand-primary/40"
-                value={categoryNameInput}
-                onChange={(e) => setCategoryNameInput(e.target.value)}
-              />
-              <button
-                type="submit"
-                className="px-3 py-2 rounded-2xl bg-brand-primary text-white text-xs font-bold uppercase tracking-widest flex items-center gap-1"
-              >
-                {editingCategoryId ? (
-                  <>
-                    <Pencil className="w-3 h-3" /> Update
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-3 h-3" /> Add
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-          <div className="border-t border-brand-primary/5 pt-3 space-y-2 max-h-64 overflow-y-auto">
-            {categoryLoading ? (
-              <p className="text-xs text-brand-primary/40">Loading...</p>
-            ) : categories.length === 0 ? (
-              <p className="text-xs text-brand-primary/40">
-                No categories found.
-              </p>
-            ) : (
-              categories?.map((cat) => (
-                <div
-                  key={cat.id || cat._id}
-                  className="flex items-center justify-between text-xs text-brand-primary bg-brand-primary/2 px-3 py-2 rounded-2xl"
-                >
-                  <span>{cat.categoryName}</span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => handleCategoryEdit(cat)}
-                      className="p-1 rounded-lg hover:bg-white text-brand-primary/60"
-                    >
-                      <Pencil className="w-3 h-3" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleCategoryDelete(cat)}
-                      className="p-1 rounded-lg hover:bg-white text-red-500"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          {categoryTotalPages > 1 && (
-            <div className="flex items-center justify-end gap-1 pt-2">
-              {getPageNumbersGeneric(categoryPage, categoryTotalPages).map(
-                (page, idx) =>
-                  page === "..." ? (
-                    <span
-                      key={`cat-ellipsis-${idx}`}
-                      className="w-6 text-center text-[10px] text-brand-primary/30"
-                    >
-                      …
-                    </span>
-                  ) : (
-                    <button
-                      key={page}
-                      type="button"
-                      onClick={() => setCategoryPage(page)}
-                      className={`w-6 h-6 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
-                        categoryPage === page
-                          ? "bg-brand-primary text-white"
-                          : "text-brand-primary/40 hover:bg-brand-primary/5"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ),
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Sub Category Management */}
-        <div className="bg-white p-6 rounded-[32px] border border-brand-primary/5 shadow-soft space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black text-brand-primary uppercase tracking-[0.2em]">
-              Job Sub Categories
-            </h2>
-          </div>
-          <form onSubmit={handleSubCategorySubmit} className="space-y-3">
-            <div className="space-y-2">
-              <select
-                className="w-full px-3 py-2 rounded-2xl border border-brand-primary/10 text-sm focus:outline-none focus:border-brand-primary/40"
-                value={selectedCategoryForSubCategory}
-                onChange={(e) => {
-                  setSelectedCategoryForSubCategory(e.target.value);
-                  setSubCategoryPage(1);
-                }}
-              >
-                <option value="">Select parent category</option>
-                {subCategoryCategoryOptions.map((cat) => (
-                  <option key={cat.id || cat._id} value={cat.id || cat._id}>
-                    {cat.categoryName}
-                  </option>
-                ))}
-              </select>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Sub category name"
-                  className="flex-1 px-3 py-2 rounded-2xl border border-brand-primary/10 text-sm focus:outline-none focus:border-brand-primary/40"
-                  value={subCategoryNameInput}
-                  onChange={(e) => setSubCategoryNameInput(e.target.value)}
-                />
-                <button
-                  type="submit"
-                  className="px-3 py-2 rounded-2xl bg-brand-primary text-white text-xs font-bold uppercase tracking-widest flex items-center gap-1"
-                >
-                  {editingSubCategory ? (
-                    <>
-                      <Pencil className="w-3 h-3" /> Update
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-3 h-3" /> Add
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </form>
-          <div className="border-t border-brand-primary/5 pt-3 space-y-2 max-h-64 overflow-y-auto">
-            {subCategoryLoading ? (
-              <p className="text-xs text-brand-primary/40">Loading...</p>
-            ) : subCategories.length === 0 ? (
-              <p className="text-xs text-brand-primary/40">
-                No sub categories found.
-              </p>
-            ) : (
-              subCategories.map((sub) => (
-                <div
-                  key={sub.id || sub._id}
-                  className="flex items-center justify-between text-xs text-brand-primary bg-brand-primary/2 px-3 py-2 rounded-2xl"
-                >
-                  <span>{sub.subCategoryName}</span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => handleSubCategoryEdit(sub)}
-                      className="p-1 rounded-lg hover:bg-white text-brand-primary/60"
-                    >
-                      <Pencil className="w-3 h-3" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSubCategoryDelete(sub)}
-                      className="p-1 rounded-lg hover:bg-white text-red-500"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          {subCategoryTotalPages > 1 && (
-            <div className="flex items-center justify-end gap-1 pt-2">
-              {getPageNumbersGeneric(
-                subCategoryPage,
-                subCategoryTotalPages,
-              ).map((page, idx) =>
-                page === "..." ? (
-                  <span
-                    key={`sub-ellipsis-${idx}`}
-                    className="w-6 text-center text-[10px] text-brand-primary/30"
-                  >
-                    …
-                  </span>
-                ) : (
-                  <button
-                    key={page}
-                    type="button"
-                    onClick={() => setSubCategoryPage(page)}
-                    className={`w-6 h-6 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
-                      subCategoryPage === page
-                        ? "bg-brand-primary text-white"
-                        : "text-brand-primary/40 hover:bg-brand-primary/5"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ),
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Skills Management */}
-        <div className="bg-white p-6 rounded-[32px] border border-brand-primary/5 shadow-soft space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black text-brand-primary uppercase tracking-[0.2em]">
-              Job Skills
-            </h2>
-          </div>
-          <form onSubmit={handleSkillSubmit} className="space-y-3">
-            <div className="space-y-2">
-              <select
-                className="w-full px-3 py-2 rounded-2xl border border-brand-primary/10 text-sm focus:outline-none focus:border-brand-primary/40"
-                value={selectedCategoryForSkills}
-                onChange={(e) => {
-                  setSelectedCategoryForSkills(e.target.value);
-                  setSkillsPage(1);
-                }}
-              >
-                <option value="">Select category</option>
-                {skillsCategoryOptions.map((cat) => (
-                  <option key={cat.id || cat._id} value={cat.id || cat._id}>
-                    {cat.categoryName}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="w-full px-3 py-2 rounded-2xl border border-brand-primary/10 text-sm focus:outline-none focus:border-brand-primary/40"
-                value={selectedSubCategoryForSkills}
-                onChange={(e) => {
-                  setSelectedSubCategoryForSkills(e.target.value);
-                  setSkillsPage(1);
-                }}
-              >
-                <option value="">Select sub category</option>
-                {skillsSubCategoryOptions.map((sub) => (
-                  <option key={sub.id || sub._id} value={sub.id || sub._id}>
-                    {sub.subCategoryName}
-                  </option>
-                ))}
-              </select>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Skill name"
-                  className="flex-1 px-3 py-2 rounded-2xl border border-brand-primary/10 text-sm focus:outline-none focus:border-brand-primary/40"
-                  value={skillNameInput}
-                  onChange={(e) => setSkillNameInput(e.target.value)}
-                />
-                <button
-                  type="submit"
-                  className="px-3 py-2 rounded-2xl bg-brand-primary text-white text-xs font-bold uppercase tracking-widest flex items-center gap-1"
-                >
-                  {editingSkill ? (
-                    <>
-                      <Pencil className="w-3 h-3" /> Update
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-3 h-3" /> Add
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </form>
-          <div className="border-t border-brand-primary/5 pt-3 space-y-2 max-h-64 overflow-y-auto">
-            {skillsLoading ? (
-              <p className="text-xs text-brand-primary/40">Loading...</p>
-            ) : skills.length === 0 ? (
-              <p className="text-xs text-brand-primary/40">
-                No skills found. Select category & sub category to view skills.
-              </p>
-            ) : (
-              skills.map((skill) => (
-                <div
-                  key={skill.id || skill._id}
-                  className="flex items-center justify-between text-xs text-brand-primary bg-brand-primary/2 px-3 py-2 rounded-2xl"
-                >
-                  <span>{skill.skillName}</span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => handleSkillEdit(skill)}
-                      className="p-1 rounded-lg hover:bg-white text-brand-primary/60"
-                    >
-                      <Pencil className="w-3 h-3" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSkillDelete(skill)}
-                      className="p-1 rounded-lg hover:bg-white text-red-500"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          {skillsTotalPages > 1 && (
-            <div className="flex items-center justify-end gap-1 pt-2">
-              {getPageNumbersGeneric(skillsPage, skillsTotalPages).map(
-                (page, idx) =>
-                  page === "..." ? (
-                    <span
-                      key={`skill-ellipsis-${idx}`}
-                      className="w-6 text-center text-[10px] text-brand-primary/30"
-                    >
-                      …
-                    </span>
-                  ) : (
-                    <button
-                      key={page}
-                      type="button"
-                      onClick={() => setSkillsPage(page)}
-                      className={`w-6 h-6 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
-                        skillsPage === page
-                          ? "bg-brand-primary text-white"
-                          : "text-brand-primary/40 hover:bg-brand-primary/5"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ),
-              )}
             </div>
           )}
         </div>
@@ -1028,150 +367,215 @@ const JobManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredJobs.map((job) => (
-                  <tr
-                    key={job.id}
-                    className="group hover:translate-x-1 transition-transform duration-300"
-                  >
-                    <td className="bg-brand-primary/2 px-6 py-5 rounded-l-3xl border-y border-brand-primary/5">
-                      <Checkbox
-                        checked={selectedJobs.includes(job.id)}
-                        onChange={() => handleSelectJob(job.id)}
-                      />
-                    </td>
-                    <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-brand-primary border border-brand-primary/5 shadow-soft transition-transform group-hover:scale-110">
-                          <Briefcase className="w-6 h-6 opacity-40" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-brand-primary mb-1 uppercase tracking-tight">
-                            {job.jobTitle}
-                          </p>
-                          <p className="text-[10px] text-brand-primary/40 flex items-center gap-1.5 font-black uppercase tracking-widest">
-                            <Building2 className="w-3 h-3" />{" "}
-                            {job.company?.companyName}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-brand-primary/60">
-                          <Layers className="w-3 h-3" />{" "}
-                          {job.jobCategory?.categoryName}
-                        </div>
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-brand-primary/40">
-                          <MapPin className="w-3 h-3" /> {job.jobType}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5">
-                      <div className="space-y-1.5 font-bold">
-                        <div className="flex items-center gap-2 text-[11px] text-brand-primary">
-                          <DollarSign className="w-3.5 h-3.5 text-brand-accent" />{" "}
-                          {job.stipend === "YES"
-                            ? "Paid"
-                            : (job.stipend ?? "Unpaid")}
-                        </div>
-                        <div className="flex items-center gap-2 text-[10px] text-brand-primary/40">
-                          <Clock className="w-3.5 h-3.5" />{" "}
-                          {job.internshipDuration}
-                        </div>
-                      </div>
-                    </td>
-                    {(activeTab === "REVIEW" || activeTab === "") && (
-                      <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5">
-                        <div className="flex items-center gap-2 bg-white/50 px-3 py-1.5 rounded-full w-fit border border-brand-primary/5">
-                          <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                          <span className="text-xs font-black text-brand-primary">
-                            {job.score ?? "N/A"}
-                          </span>
-                        </div>
+                {filteredJobs.map((job) => {
+                  const jobStatus = job.jobStatus || job.status;
+
+                  return (
+                    <tr
+                      key={job.id}
+                      className="group hover:translate-x-1 transition-transform duration-300"
+                    >
+                      <td className="bg-brand-primary/2 px-6 py-5 rounded-l-3xl border-y border-brand-primary/5">
+                        <Checkbox
+                          checked={selectedJobs.includes(job.id)}
+                          onChange={() => handleSelectJob(job.id)}
+                        />
                       </td>
-                    )}
-                    <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5 text-center">
-                      <span
-                        className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase inline-block ${getStatusStyle(job.jobStatus)}`}
-                      >
-                        {job.jobStatus}
-                      </span>
-                    </td>
-                    <td className="bg-brand-primary/2 px-6 py-5 rounded-r-3xl border-y border-brand-primary/5 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => setSelectedJobView(job)}
-                          className="p-2 text-brand-primary hover:bg-white rounded-xl transition-all shadow-hover-sm"
-                          title="View Details"
-                        >
-                          <Eye className="w-5 h-5" />
-                        </button>
-                        <div className="relative group/actions inline-block">
-                          <button className="p-2 text-brand-primary/40 hover:bg-white rounded-xl transition-all shadow-hover-sm">
-                            <MoreVertical className="w-5 h-5" />
-                          </button>
-                          <div className="absolute right-0 bottom-full mb-2 w-44 bg-white rounded-2xl shadow-xl border border-brand-primary/5 py-2 z-20 opacity-0 invisible group-hover/actions:opacity-100 group-hover/actions:visible transition-all">
-                            {job.jobStatus === "REVIEW" && (
-                              <>
-                                <button
-                                  onClick={() =>
-                                    handleStatusUpdate(job.id, "APPROVED")
-                                  }
-                                  className="w-full text-left px-4 py-2 text-[10px] font-bold text-green-600 hover:bg-green-50 uppercase tracking-wider flex items-center gap-2"
-                                >
-                                  <CheckCircle2 className="w-3.5 h-3.5" />{" "}
-                                  Approve Job
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    handleStatusUpdate(job.id, "REJECTED")
-                                  }
-                                  className="w-full text-left px-4 py-2 text-[10px] font-bold text-red-600 hover:bg-red-50 uppercase tracking-wider flex items-center gap-2"
-                                >
-                                  <XCircle className="w-3.5 h-3.5" /> Reject Job
-                                </button>
-                              </>
-                            )}
-                            {job.jobStatus === "APPROVED" && (
-                              <>
-                                <button
-                                  onClick={() =>
-                                    handleStatusUpdate(job.id, "PAUSED")
-                                  }
-                                  className="w-full text-left px-4 py-2 text-[10px] font-bold text-blue-600 hover:bg-blue-50 uppercase tracking-wider flex items-center gap-2"
-                                >
-                                  <Clock className="w-3.5 h-3.5" /> Pause
-                                  Tracking
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    handleStatusUpdate(job.id, "COMPLETED")
-                                  }
-                                  className="w-full text-left px-4 py-2 text-[10px] font-bold text-brand-primary hover:bg-brand-primary/5 uppercase tracking-wider flex items-center gap-2"
-                                >
-                                  <Layers className="w-3.5 h-3.5" /> Mark
-                                  Completed
-                                </button>
-                              </>
-                            )}
-                            <div className="h-px bg-brand-primary/5 my-1 mx-2" />
-                            <button
-                              onClick={() => {
-                                dispatch(deleteJob(job.id));
-                                setJobs((prev) =>
-                                  prev.filter((j) => j.id !== job.id),
-                                );
-                              }}
-                              className="w-full text-left px-4 py-2 text-[10px] font-bold text-red-400 hover:bg-red-50 uppercase tracking-wider flex items-center gap-2"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" /> Delete Entry
-                            </button>
+                      <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-brand-primary border border-brand-primary/5 shadow-soft transition-transform group-hover:scale-110">
+                            <Briefcase className="w-6 h-6 opacity-40" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-brand-primary mb-1 uppercase tracking-tight">
+                              {job.jobTitle}
+                            </p>
+                            <p className="text-[10px] text-brand-primary/40 flex items-center gap-1.5 font-black uppercase tracking-widest">
+                              <Building2 className="w-3 h-3" />{" "}
+                              {job.company?.companyName}
+                            </p>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 text-[10px] font-bold text-brand-primary/60">
+                            <Layers className="w-3 h-3" />{" "}
+                            {job.jobCategory?.categoryName}
+                          </div>
+                          <div className="flex items-center gap-2 text-[10px] font-bold text-brand-primary/40">
+                            <MapPin className="w-3 h-3" /> {job.jobType}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5">
+                        <div className="space-y-1.5 font-bold">
+                          <div className="flex items-center gap-2 text-[11px] text-brand-primary">
+                            <IndianRupee className="w-3.5 h-3.5 text-brand-primary" />{" "}
+                            {job.stipend === "YES"
+                              ? "Paid"
+                              : (job.stipend ?? "Unpaid")}
+                          </div>
+                          <div className="flex items-center gap-2 text-[10px] text-brand-primary/40">
+                            <Clock className="w-3.5 h-3.5" />{" "}
+                            {job.internshipDuration}
+                          </div>
+                        </div>
+                      </td>
+                      {(activeTab === "REVIEW" || activeTab === "") && (
+                        <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5">
+                          <div className="flex items-center gap-2 bg-white/50 px-3 py-1.5 rounded-full w-fit border border-brand-primary/5">
+                            <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                            <span className="text-xs font-black text-brand-primary">
+                              {job.score ?? "N/A"}
+                            </span>
+                          </div>
+                        </td>
+                      )}
+                      <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5 text-center">
+                        <span
+                          className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase inline-block ${getStatusStyle(
+                            jobStatus,
+                          )}`}
+                        >
+                          {jobStatus}
+                        </span>
+                      </td>
+                      <td className="bg-brand-primary/2 px-6 py-5 rounded-r-3xl border-y border-brand-primary/5 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {/* <button
+                            onClick={() => setSelectedJobView(job)}
+                            className="p-2 text-brand-primary hover:bg-white rounded-xl transition-all shadow-hover-sm"
+                            title="View Details"
+                          >
+                            <Eye className="w-5 h-5" />
+                          </button> */}
+                          <div className="relative inline-block">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenDropdownId(
+                                  openDropdownId === job.id ? null : job.id,
+                                );
+                              }}
+                              className="p-2 text-brand-primary/40 hover:bg-white rounded-xl transition-all shadow-hover-sm"
+                            >
+                              <MoreVertical className="w-5 h-5" />
+                            </button>
+                            {openDropdownId === job.id && (
+                              <div className="absolute right-0  -bottom-12  mb-2 w-44 bg-white rounded-2xl shadow-xl border border-brand-primary/5 py-2 z-[1000]">
+                                {jobStatus === "REVIEW" && (
+                                  <>
+                                    <button
+                                      onClick={() =>
+                                        handleStatusUpdate(job.id, "APPROVED")
+                                      }
+                                      className="w-full text-left px-4 py-2 text-[10px] font-bold text-green-600 hover:bg-green-50 uppercase tracking-wider flex items-center gap-2"
+                                    >
+                                      <CheckCircle2 className="w-3.5 h-3.5" />{" "}
+                                      Approve
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handleStatusUpdate(job.id, "REJECTED")
+                                      }
+                                      className="w-full text-left px-4 py-2 text-[10px] font-bold text-red-600 hover:bg-red-50 uppercase tracking-wider flex items-center gap-2"
+                                    >
+                                      <XCircle className="w-3.5 h-3.5" /> Reject
+                                    </button>
+                                  </>
+                                )}
+
+                                {jobStatus === "APPROVED" && (
+                                  <>
+                                    <button
+                                      onClick={() =>
+                                        handleStatusUpdate(job.id, "PAUSED")
+                                      }
+                                      className="w-full text-left px-4 py-2 text-[10px] font-bold text-blue-600 hover:bg-blue-50 uppercase tracking-wider flex items-center gap-2"
+                                    >
+                                      <Clock className="w-3.5 h-3.5" /> Pause
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handleStatusUpdate(job.id, "COMPLETED")
+                                      }
+                                      className="w-full text-left px-4 py-2 text-[10px] font-bold text-brand-primary hover:bg-brand-primary/5 uppercase tracking-wider flex items-center gap-2"
+                                    >
+                                      <Layers className="w-3.5 h-3.5" />{" "}
+                                      Complete
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handleStatusUpdate(job.id, "REJECTED")
+                                      }
+                                      className="w-full text-left px-4 py-2 text-[10px] font-bold text-red-600 hover:bg-red-50 uppercase tracking-wider flex items-center gap-2"
+                                    >
+                                      <XCircle className="w-3.5 h-3.5" /> Reject
+                                    </button>
+                                  </>
+                                )}
+
+                                {jobStatus === "PAUSED" && (
+                                  <>
+                                    <button
+                                      onClick={() =>
+                                        handleStatusUpdate(job.id, "COMPLETED")
+                                      }
+                                      className="w-full text-left px-4 py-2 text-[10px] font-bold text-brand-primary hover:bg-brand-primary/5 uppercase tracking-wider flex items-center gap-2"
+                                    >
+                                      <Layers className="w-3.5 h-3.5" />{" "}
+                                      Complete
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handleStatusUpdate(job.id, "REJECTED")
+                                      }
+                                      className="w-full text-left px-4 py-2 text-[10px] font-bold text-red-600 hover:bg-red-50 uppercase tracking-wider flex items-center gap-2"
+                                    >
+                                      <XCircle className="w-3.5 h-3.5" /> Reject
+                                    </button>
+                                  </>
+                                )}
+
+                                {jobStatus === "COMPLETED" && (
+                                  <button
+                                    onClick={() =>
+                                      handleStatusUpdate(job.id, "REJECTED")
+                                    }
+                                    className="w-full text-left px-4 py-2 text-[10px] font-bold text-red-600 hover:bg-red-50 uppercase tracking-wider flex items-center gap-2"
+                                  >
+                                    <XCircle className="w-3.5 h-3.5" /> Reject
+                                  </button>
+                                )}
+
+                                {/* No actions for REJECTED */}
+
+                                {jobStatus !== "REJECTED" && (
+                                  <>
+                                    <div className="h-px bg-brand-primary/5 my-1 mx-2" />
+                                    <button
+                                      onClick={() => {
+                                        dispatch(deleteJob(job.id));
+                                        setJobs((prev) =>
+                                          prev.filter((j) => j.id !== job.id),
+                                        );
+                                      }}
+                                      className="w-full text-left px-4 py-2 text-[10px] font-bold text-red-400 hover:bg-red-50 uppercase tracking-wider flex items-center gap-2"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" /> Delete
+                                      Entry
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           ) : (
