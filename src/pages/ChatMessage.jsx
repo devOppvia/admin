@@ -97,6 +97,11 @@ const ChatMessage = () => {
 
       if (res.status) {
         setInput("");
+        setSelectedFile(null);
+        setFilePreview(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
         fetchMessages(activeTicketId);
       }
     } catch (err) {
@@ -289,7 +294,7 @@ const ChatMessage = () => {
                 <div
                   className={`max-w-[75%] p-5 rounded-[28px] ${msg.isRepliedByAdmin ? "bg-brand-primary text-white rounded-tr-none shadow-premium" : "bg-white border border-brand-primary/5 text-brand-primary rounded-tl-none shadow-soft"}`}
                 >
-                  <p className="text-sm font-medium leading-relaxed">
+                  <p className="text-sm font-medium break-words max-w-100 leading-relaxed">
                     {msg.message}
                   </p>
                   {msg.attachment && (
@@ -327,6 +332,45 @@ const ChatMessage = () => {
             )}
           </div>
 
+          {/* File Preview */}
+          {filePreview && (
+            <div className="px-6 py-3 bg-brand-primary/5 border-b border-brand-primary/10 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {filePreview.type.startsWith("image/") ? (
+                  <img
+                    src={filePreview.url}
+                    alt={filePreview.name}
+                    className="w-10 h-10 object-cover rounded-lg"
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-brand-primary/10 rounded-lg flex items-center justify-center">
+                    <File className="w-5 h-5 text-brand-primary" />
+                  </div>
+                )}
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-brand-primary truncate max-w-[200px]">
+                    {filePreview.name}
+                  </span>
+                  <span className="text-[9px] text-brand-primary/40 uppercase tracking-wider">
+                    {filePreview.type || "File attached"}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedFile(null);
+                  setFilePreview(null);
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                  }
+                }}
+                className="p-2 text-brand-primary/40 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {/* Input Area */}
           <div className="p-6 bg-white border-t border-brand-primary/5 z-10">
             <div className="flex items-center gap-4 bg-brand-primary/[0.03] p-2 rounded-2xl focus-within:bg-white focus-within:ring-4 focus-within:ring-brand-primary/5 transition-all border border-transparent focus-within:border-brand-primary/10">
@@ -359,7 +403,7 @@ const ChatMessage = () => {
                 <Send className="w-5 h-5 text-brand-accent group-hover:scale-110 transition-transform" />
               </button>
             </div>
-              {/* <div className="flex items-center gap-4 mt-4 px-2">
+            {/* <div className="flex items-center gap-4 mt-4 px-2">
                   <span className="text-[9px] font-black text-brand-primary/20 uppercase tracking-[0.2em] flex items-center gap-2">
                   <Clock className="w-3 h-3" />
                   Quick Actions:

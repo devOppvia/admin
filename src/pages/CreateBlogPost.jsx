@@ -89,7 +89,7 @@ const CreateBlogPost = () => {
           isScheduled: post.isScheduled || false,
           scheduledDate: post.scheduledDate || "",
           categoryId: post.blogCategory.id || post.category?.id || "",
-          tags: post.blogTags.map((t) => t.id) || [],
+          tags: post.blogTags || [],
         }));
         if (post.image && typeof post.image === "string") {
           setImagePreview(`${IMAGE_URL}/${post.image}`);
@@ -185,30 +185,28 @@ const CreateBlogPost = () => {
   };
 
   const toggleTag = (tag) => {
-    const tagId = tag.id || tag;
-    const currentTags = formData.tags || [];
-    const exists = currentTags.some((t) => (t.id || t) === tagId);
+  const currentTags = formData.tags || [];
+  const exists = currentTags.some((t) => t.id === tag.id);
 
-    if (exists) {
-      setFormData((prev) => ({
-        ...prev,
-        tags: currentTags.filter((t) => (t.id || t) !== tagId),
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        tags: [...currentTags, tag],
-      }));
-    }
-  };
-
-  const removeTag = (tagToRemove) => {
-    const tagId = tagToRemove.id || tagToRemove;
+  if (exists) {
     setFormData((prev) => ({
       ...prev,
-      tags: (prev.tags || []).filter((t) => (t.id || t) !== tagId),
+      tags: currentTags.filter((t) => t.id !== tag.id),
     }));
-  };
+  } else {
+    setFormData((prev) => ({
+      ...prev,
+      tags: [...currentTags, tag], // always object
+    }));
+  }
+};
+
+ const removeTag = (tagToRemove) => {
+  setFormData((prev) => ({
+    ...prev,
+    tags: prev.tags.filter((t) => t.id !== tagToRemove.id),
+  }));
+};
 
   const handleCategoryChange = (e) => {
     const categoryId = e.target.value;

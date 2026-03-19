@@ -211,7 +211,7 @@ const CompanyManagement = () => {
                       </td>
                       <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5 group-hover:border-brand-primary/10 transition-colors">
                         <span className="text-xs font-bold text-brand-primary/60">
-                          {company.industryType || "-"}
+                          {company.industryName || "-"}
                         </span>
                       </td>
                       <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5 group-hover:border-brand-primary/10 transition-colors">

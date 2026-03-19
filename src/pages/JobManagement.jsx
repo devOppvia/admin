@@ -1,5 +1,3 @@
-import { useDispatch } from "react-redux";
-import { deleteJob } from "../store/slices/jobSlice";
 import {
   Briefcase,
   Search,
@@ -26,7 +24,7 @@ import EmptyState from "../components/common/EmptyState";
 import Modal from "../components/modals/Modal";
 import Checkbox from "../components/common/Checkbox";
 import JobDetailsModal from "../components/modals/JobDetailsModal";
-import { getJobPositions, changeJobStatus } from "../helper/api_helper";
+import { getJobPositions, changeJobStatus, deleteJobPosition } from "../helper/api_helper";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -44,7 +42,6 @@ const internStatus = [
 ];
 
 const JobManagement = () => {
-  const dispatch = useDispatch();
 
   // API State
   const [jobs, setJobs] = useState([]);
@@ -264,7 +261,7 @@ const JobManagement = () => {
             Monitor and manage internship opportunities across the network.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        {/* <div className="flex items-center gap-3">
           {selectedJobs.length > 0 && (
             <div className="flex items-center gap-2 animate-slideIn">
               <span className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest mr-2">
@@ -297,7 +294,7 @@ const JobManagement = () => {
               </div>
             </div>
           )}
-        </div>
+        </div> */}
       </div>
 
       {/* Stats & Filters */}
@@ -349,7 +346,7 @@ const JobManagement = () => {
             <table className="w-full text-left border-separate border-spacing-y-4">
               <thead>
                 <tr className="text-brand-primary/30 uppercase text-[10px] font-black tracking-[0.2em]">
-                  <th className="px-6 py-2">
+                  {/* <th className="px-6 py-2">
                     <Checkbox
                       checked={
                         selectedJobs.length === filteredJobs.length &&
@@ -357,7 +354,7 @@ const JobManagement = () => {
                       }
                       onChange={handleSelectAll}
                     />
-                  </th>
+                  </th> */}
                   <th className="px-6 py-2">Job & Company</th>
                   <th className="px-6 py-2">Details</th>
                   <th className="px-6 py-2">Compensation</th>
@@ -377,12 +374,12 @@ const JobManagement = () => {
                       key={job.id}
                       className="group hover:translate-x-1 transition-transform duration-300"
                     >
-                      <td className="bg-brand-primary/2 px-6 py-5 rounded-l-3xl border-y border-brand-primary/5">
+                      {/* <td className="bg-brand-primary/2 px-6 py-5 rounded-l-3xl border-y border-brand-primary/5">
                         <Checkbox
                           checked={selectedJobs.includes(job.id)}
                           onChange={() => handleSelectJob(job.id)}
                         />
-                      </td>
+                      </td> */}
                       <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5">
                         <div className="flex items-center gap-4">
                           <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-brand-primary border border-brand-primary/5 shadow-soft transition-transform group-hover:scale-110">
@@ -559,11 +556,13 @@ const JobManagement = () => {
                                   <>
                                     <div className="h-px bg-brand-primary/5 my-1 mx-2" />
                                     <button
-                                      onClick={() => {
-                                        dispatch(deleteJob(job.id));
-                                        setJobs((prev) =>
-                                          prev.filter((j) => j.id !== job.id),
-                                        );
+                                      onClick={async () => {
+                                        try {
+                                          await deleteJobPosition(job.id);
+                                          fetchJobs(activeTab, currentPage);
+                                        } catch (err) {
+                                          console.error("Error deleting job:", err);
+                                        }
                                       }}
                                       className="w-full text-left px-4 py-2 text-[10px] font-bold text-red-400 hover:bg-red-50 uppercase tracking-wider flex items-center gap-2"
                                     >
@@ -726,10 +725,10 @@ const JobManagement = () => {
               </div>
               <div>
                 <h4 className="text-lg font-black text-brand-primary leading-tight">
-                  Remove this category?
+                  Reject this job posting?
                 </h4>
                 <p className="text-sm text-brand-primary/40 mt-1">
-                  You are about to delete{" "}
+                  You are about to reject the job posting for{" "}
                   <span className="font-bold text-brand-primary">
                     "
                     {currentJobToReject?.jobTitle ||
@@ -737,7 +736,7 @@ const JobManagement = () => {
                       currentJobToReject}
                     "
                   </span>
-                  . This action cannot be undone.
+                  . This will notify the company with your reason.
                 </p>
 
                 <div className="flex flex-col gap-2 mt-4 items-start">
@@ -765,7 +764,7 @@ const JobManagement = () => {
                 disabled={!rejectReason.trim()}
                 className="flex-1 px-6 py-4 bg-red-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20 hover:bg-red-600 transition-all"
               >
-                Confirm Delete
+                Confirm Rejection
               </button>
             </div>
           </div>

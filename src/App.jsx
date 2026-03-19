@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { Toaster } from 'react-hot-toast';
 import DashboardLayout from './components/layout/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import CompanyManagement from './pages/CompanyManagement';
@@ -21,7 +22,9 @@ function App() {
   const { isAuthenticated } = useSelector((state) => state.auth);
 
   return (
-    <BrowserRouter>
+    <>
+      <Toaster position="top-right" />
+      <BrowserRouter>
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" />} />
@@ -48,6 +51,7 @@ function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </>
   );
 }
 

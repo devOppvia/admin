@@ -104,50 +104,58 @@ const SubscriptionManagement = () => {
 
     if (!packageName || packageName.trim().length < 3)
       return "Package name must be at least 3 characters long.";
+    if (packageName.trim().length > 12)
+      return "Package name cannot exceed 12 characters.";
     if (!/^[A-Za-z\s]+$/.test(packageName))
       return "Package name cannot contain digits or special characters.";
     if (packageName.trim().split(/\s+/).length > 3)
       return "Package name cannot exceed 3 words.";
 
-    if (!actualPrice || isNaN(actualPrice) || Number(actualPrice) < 0)
+    if (!actualPrice || isNaN(actualPrice) || Number(actualPrice) <= 0)
       return "Valid Actual Price is required.";
     if (
       !discountedPrice ||
       isNaN(discountedPrice) ||
-      Number(discountedPrice) < 0
+      Number(discountedPrice) <= 0
     )
       return "Valid Discounted Price is required.";
-    if (Number(actualPrice) === Number(discountedPrice))
-      return "Discounted Price cannot be same as Actual Price.";
+    if (Number(actualPrice) <= Number(discountedPrice))
+      return "Actual Price must be greater than Discounted Price.";
 
     if (
       !numberOfJobPosting ||
       isNaN(numberOfJobPosting) ||
-      Number(numberOfJobPosting) < 0
+      Number(numberOfJobPosting) <= 0
     )
-      return "Valid Number of Job Postings required.";
+      return "Number of Job Postings is required.";
     if (
       !numberOfResumeAccess ||
       isNaN(numberOfResumeAccess) ||
-      Number(numberOfResumeAccess) < 0
+      Number(numberOfResumeAccess) <= 0
     )
-      return "Valid Resume Access Limit required.";
-    if (!jobDaysActive || isNaN(jobDaysActive) || Number(jobDaysActive) < 1)
-      return "Job Post Validity must be at least 1 day.";
+      return "Resume Access Limit is required.";
+    if (!jobDaysActive || isNaN(jobDaysActive) || Number(jobDaysActive) <= 0)
+      return "Job Post Validity is required.";
     if (
       !expireDaysPackage ||
       isNaN(expireDaysPackage) ||
-      Number(expireDaysPackage) < 1
+      Number(expireDaysPackage) <= 0
     )
-      return "Package Expiry Duration must be at least 1 day.";
+      return "Package Expiry Duration is required.";
 
     return null;
   };
 
   const handleSave = async () => {
-    const error = validateForm();
-    if (error) {
-      toast.error(error);
+    try {
+      const error = validateForm();
+      if (error) {
+        toast.error(error);
+        return;
+      }
+    } catch (err) {
+      console.error("Validation error:", err);
+      toast.error("Validation failed. Please check your inputs.");
       return;
     }
 

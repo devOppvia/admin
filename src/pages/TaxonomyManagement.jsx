@@ -37,6 +37,7 @@ import {
   updateJobCategory,
   updateJobSubCategory,
 } from "../helper/api_helper";
+import Checkbox from "../components/common/Checkbox";
 const TABS = [
   { key: "CATEGORIES", name: "Categories", icon: LayoutGrid },
   { key: "SUBCATEGORIES", name: "Sub-Categories", icon: Layers },
