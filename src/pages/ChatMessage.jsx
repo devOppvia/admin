@@ -263,12 +263,12 @@ const ChatMessage = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button className="p-3 text-brand-primary/30 hover:bg-brand-primary/5 rounded-xl transition-colors">
+              {/* <button className="p-3 text-brand-primary/30 hover:bg-brand-primary/5 rounded-xl transition-colors">
                 <Flag className="w-5 h-5" />
               </button>
               <button className="p-3 text-brand-primary/30 hover:bg-brand-primary/5 rounded-xl transition-colors">
                 <MoreHorizontal className="w-5 h-5" />
-              </button>
+              </button> */}
               {activeTicket?.status === "OPEN" ? (
                 <button
                   onClick={handleCloseTicket}
@@ -299,14 +299,14 @@ const ChatMessage = () => {
                   </p>
                   {msg.attachment && (
                     <a
-                      href={msg.attachment}
+                      href={IMAGE_BASE_URL + "/" + msg.attachment}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 mt-2"
+                      className="flex bg-brand-primary/5 text-brand-primary p-2 rounded-lg items-center gap-2 mt-2"
                     >
                       <File className="w-5 h-5" />
                       <span className="text-[9px] font-bold uppercase tracking-widest">
-                        {msg.attachment}
+                        open Attachment
                       </span>
                     </a>
                   )}

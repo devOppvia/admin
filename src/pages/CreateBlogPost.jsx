@@ -119,6 +119,24 @@ const CreateBlogPost = () => {
       toast.error("Please fill in required fields");
       return;
     }
+    if(formData.title.trim() === ""){
+      toast.error("Please enter a title");
+      return;
+    }
+    if(formData.categoryId.trim() === ""){
+      toast.error("Please select a category");
+      return;
+    }
+
+    if(formData.title.trim().length > 50){
+      toast.error("Title must be less than 50 characters long");
+      return;
+    } 
+
+    // if(formData.description.trim().length > 1500){
+    //   toast.error("Description must be less than 1500 characters long");
+    //   return;
+    // }
 
     try {
       // Prepare form data for API

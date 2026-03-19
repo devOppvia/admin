@@ -104,8 +104,8 @@ const SubscriptionManagement = () => {
 
     if (!packageName || packageName.trim().length < 3)
       return "Package name must be at least 3 characters long.";
-    if (packageName.trim().length > 12)
-      return "Package name cannot exceed 12 characters.";
+    if (packageName.trim().length > 20)
+      return "Package name cannot exceed 20 characters.";
     if (!/^[A-Za-z\s]+$/.test(packageName))
       return "Package name cannot contain digits or special characters.";
     if (packageName.trim().split(/\s+/).length > 3)
@@ -215,163 +215,198 @@ const SubscriptionManagement = () => {
   );
 
   return (
-    <div className="space-y-8 animate-fadeIn max-w-[1400px] mx-auto pb-20">
-      {/* Header Area */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-brand-primary/5">
-        <div>
-          <h1 className="text-3xl font-black text-brand-primary tracking-tight uppercase leading-tight">
-            Subscription{" "}
-            <span className="text-brand-primary/30">Management</span>
-          </h1>
-          <p className="text-brand-primary/50 text-xs font-black uppercase tracking-widest mt-1">
-            Manage Pricing Plans and Packages
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="relative group/search">
-            <Search className="w-4 h-4 text-brand-primary/30 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within/search:text-brand-primary transition-colors" />
-            <input
-              type="text"
-              placeholder="Search packages..."
-              className="w-full md:w-64 pl-11 pr-4 py-3.5 bg-white border border-brand-primary/10 rounded-2xl text-xs font-bold text-brand-primary placeholder:text-brand-primary/30 focus:ring-4 focus:ring-brand-primary/5 focus:border-brand-primary/20 transition-all outline-none"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+    <>
+      {" "}
+      <div className="space-y-8 animate-fadeIn max-w-[1400px] mx-auto pb-20">
+        {/* Header Area */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-brand-primary/5">
+          <div>
+            <h1 className="text-3xl font-black text-brand-primary tracking-tight uppercase leading-tight">
+              Subscription{" "}
+              <span className="text-brand-primary/30">Management</span>
+            </h1>
+            <p className="text-brand-primary/50 text-xs font-black uppercase tracking-widest mt-1">
+              Manage Pricing Plans and Packages
+            </p>
           </div>
-          <button
-            onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-6 py-3.5 bg-brand-primary text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-premium hover:shadow-hover hover:-translate-y-0.5 transition-all"
-          >
-            <Plus className="w-4 h-4" /> Add New Plan
-          </button>
-        </div>
-      </div>
-
-      {/* Content Display */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-4 border-brand-primary/20 border-t-brand-primary rounded-full animate-spin"></div>
-        </div>
-      ) : error ? (
-        <div className="text-center py-20">
-          <p className="text-red-500 font-medium">{error}</p>
-        </div>
-      ) : filteredPackages.length === 0 ? (
-        <div className="text-center py-20">
-          <p className="text-brand-primary/50 font-medium">
-            No subscription plans found.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredPackages.map((pack) => (
-            <div
-              key={pack.id}
-              className="bg-white rounded-[32px] p-8 border border-brand-primary/5 shadow-soft relative overflow-hidden group hover:border-brand-primary/20 transition-all"
+          <div className="flex items-center gap-4">
+            <div className="relative group/search">
+              <Search className="w-4 h-4 text-brand-primary/30 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within/search:text-brand-primary transition-colors" />
+              <input
+                type="text"
+                placeholder="Search packages..."
+                className="w-full md:w-64 pl-11 pr-4 py-3.5 bg-white border border-brand-primary/10 rounded-2xl text-xs font-bold text-brand-primary placeholder:text-brand-primary/30 focus:ring-4 focus:ring-brand-primary/5 focus:border-brand-primary/20 transition-all outline-none"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <button
+              onClick={() => handleOpenModal()}
+              className="flex items-center gap-2 px-6 py-3.5 bg-brand-primary text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-premium hover:shadow-hover hover:-translate-y-0.5 transition-all"
             >
-              {/* Package Header */}
-              <div className="flex justify-between items-start mb-6">
-                <span className="px-4 py-2 border border-brand-primary/20 rounded-full text-[10px] font-black uppercase tracking-widest text-brand-primary">
-                  {pack.packageName}
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleOpenModal(pack)}
-                    className="p-2 text-brand-primary/40 hover:text-brand-primary bg-brand-primary/0 hover:bg-brand-primary/5 rounded-xl transition-all"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() =>
-                      setDeleteConfirm({ show: true, id: pack.id })
-                    }
-                    className="p-2 text-red-400 hover:text-red-500 bg-red-500/0 hover:bg-red-500/5 rounded-xl transition-all"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+              <Plus className="w-4 h-4" /> Add New Plan
+            </button>
+          </div>
+        </div>
 
-              {/* Price Area */}
-              <div className="mb-8">
-                <div className="flex items-baseline gap-3">
-                  <h3 className="text-4xl font-black text-brand-primary tracking-tight">
-                    ₹{pack.discountedPrice}
-                  </h3>
-                  {pack.actualPrice > pack.discountedPrice && (
-                    <span className="text-sm font-bold text-brand-primary/30 line-through">
-                      ₹{pack.actualPrice}
-                    </span>
+        {/* Content Display */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="w-8 h-8 border-4 border-brand-primary/20 border-t-brand-primary rounded-full animate-spin"></div>
+          </div>
+        ) : error ? (
+          <div className="text-center py-20">
+            <p className="text-red-500 font-medium">{error}</p>
+          </div>
+        ) : filteredPackages.length === 0 ? (
+          <div className="text-center py-20">
+            <p className="text-brand-primary/50 font-medium">
+              No subscription plans found.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredPackages.map((pack) => (
+              <div
+                key={pack.id}
+                className="bg-white rounded-[32px] p-8 border border-brand-primary/5 shadow-soft relative overflow-hidden group hover:border-brand-primary/20 transition-all"
+              >
+                {/* Package Header */}
+                <div className="flex justify-between items-start mb-6">
+                  <span className="px-4 py-2 border border-brand-primary/20 rounded-full text-[10px] font-black uppercase tracking-widest text-brand-primary">
+                    {pack.packageName}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleOpenModal(pack)}
+                      className="p-2 text-brand-primary/40 hover:text-brand-primary bg-brand-primary/0 hover:bg-brand-primary/5 rounded-xl transition-all"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() =>
+                        setDeleteConfirm({ show: true, id: pack.id })
+                      }
+                      className="p-2 text-red-400 hover:text-red-500 bg-red-500/0 hover:bg-red-500/5 rounded-xl transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Price Area */}
+                <div className="mb-8">
+                  <div className="flex items-baseline gap-3">
+                    <h3 className="text-4xl font-black text-brand-primary tracking-tight">
+                      ₹{pack.discountedPrice}
+                    </h3>
+                    {pack.actualPrice > pack.discountedPrice && (
+                      <span className="text-sm font-bold text-brand-primary/30 line-through">
+                        ₹{pack.actualPrice}
+                      </span>
+                    )}
+                  </div>
+                  {pack.sortDescription && (
+                    <p className="text-xs font-medium text-brand-primary/50 mt-2 line-clamp-2">
+                      {pack.sortDescription}
+                    </p>
                   )}
                 </div>
-                {pack.sortDescription && (
-                  <p className="text-xs font-medium text-brand-primary/50 mt-2 line-clamp-2">
-                    {pack.sortDescription}
-                  </p>
-                )}
-              </div>
 
-              {/* Features List */}
-              <div className="space-y-4 mb-2">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-brand-primary/5 rounded-xl">
-                    <Briefcase className="w-4 h-4 text-brand-primary" />
+                {/* Features List */}
+                <div className="space-y-4 mb-2">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-brand-primary/5 rounded-xl">
+                      <Briefcase className="w-4 h-4 text-brand-primary" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary/40">
+                        Job Postings
+                      </p>
+                      <p className="text-sm font-bold text-brand-primary">
+                        {pack.numberOfJobPosting} Posts
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary/40">
-                      Job Postings
-                    </p>
-                    <p className="text-sm font-bold text-brand-primary">
-                      {pack.numberOfJobPosting} Posts
-                    </p>
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-brand-primary/5 rounded-xl">
+                      <Users className="w-4 h-4 text-brand-primary" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary/40">
+                        Resume Access
+                      </p>
+                      <p className="text-sm font-bold text-brand-primary">
+                        {pack.numberOfResumeAccess} Views/Job
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-brand-primary/5 rounded-xl">
+                      <Calendar className="w-4 h-4 text-brand-primary" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary/40">
+                        Job Validity
+                      </p>
+                      <p className="text-sm font-bold text-brand-primary">
+                        {pack.jobDaysActive} Days
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-brand-primary/5 rounded-xl">
+                      <AlertCircle className="w-4 h-4 text-brand-primary" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary/40">
+                        Package Expiry
+                      </p>
+                      <p className="text-sm font-bold text-brand-primary">
+                        {pack.expireDaysPackage} Days
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-brand-primary/5 rounded-xl">
-                    <Users className="w-4 h-4 text-brand-primary" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary/40">
-                      Resume Access
-                    </p>
-                    <p className="text-sm font-bold text-brand-primary">
-                      {pack.numberOfResumeAccess} Views/Job
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-brand-primary/5 rounded-xl">
-                    <Calendar className="w-4 h-4 text-brand-primary" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary/40">
-                      Job Validity
-                    </p>
-                    <p className="text-sm font-bold text-brand-primary">
-                      {pack.jobDaysActive} Days
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-brand-primary/5 rounded-xl">
-                    <AlertCircle className="w-4 h-4 text-brand-primary" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary/40">
-                      Package Expiry
-                    </p>
-                    <p className="text-sm font-bold text-brand-primary">
-                      {pack.expireDaysPackage} Days
-                    </p>
-                  </div>
-                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Modal */}
+
+        {/* Delete Confirmation */}
+        {deleteConfirm.show && (
+          <div className="fixed inset-0 bg-brand-primary/20 backdrop-blur-sm z-60 flex items-center justify-center p-4">
+            <div className="bg-white rounded-[32px] p-8 max-w-sm w-full border border-brand-primary/10 shadow-premium animate-slideUp text-center">
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-black text-brand-primary mb-2">
+                Delete Package?
+              </h3>
+              <p className="text-xs font-medium text-brand-primary/50 mb-8">
+                This action cannot be undone. Any active subscriptions on this
+                plan will remain valid until expiry.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteConfirm({ show: false, id: null })}
+                  className="flex-1 py-3.5 bg-brand-primary/5 text-brand-primary font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-brand-primary/10 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 py-3.5 bg-red-500 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
+                >
+                  Delete
+                </button>
               </div>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Modal */}
+          </div>
+        )}
+      </div>
       {isPackageToggle && (
         <div className="fixed inset-0 bg-brand-primary/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-[40px] w-full max-w-3xl border border-brand-primary/10 shadow-premium overflow-hidden animate-slideUp">
@@ -576,39 +611,7 @@ const SubscriptionManagement = () => {
           </div>
         </div>
       )}
-
-      {/* Delete Confirmation */}
-      {deleteConfirm.show && (
-        <div className="fixed inset-0 bg-brand-primary/20 backdrop-blur-sm z-60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] p-8 max-w-sm w-full border border-brand-primary/10 shadow-premium animate-slideUp text-center">
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <AlertCircle className="w-8 h-8" />
-            </div>
-            <h3 className="text-xl font-black text-brand-primary mb-2">
-              Delete Package?
-            </h3>
-            <p className="text-xs font-medium text-brand-primary/50 mb-8">
-              This action cannot be undone. Any active subscriptions on this
-              plan will remain valid until expiry.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteConfirm({ show: false, id: null })}
-                className="flex-1 py-3.5 bg-brand-primary/5 text-brand-primary font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-brand-primary/10 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex-1 py-3.5 bg-red-500 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </>
   );
 };
 

@@ -24,7 +24,11 @@ import EmptyState from "../components/common/EmptyState";
 import Modal from "../components/modals/Modal";
 import Checkbox from "../components/common/Checkbox";
 import JobDetailsModal from "../components/modals/JobDetailsModal";
-import { getJobPositions, changeJobStatus, deleteJobPosition } from "../helper/api_helper";
+import {
+  getJobPositions,
+  changeJobStatus,
+  deleteJobPosition,
+} from "../helper/api_helper";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -42,14 +46,13 @@ const internStatus = [
 ];
 
 const JobManagement = () => {
-
   // API State
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-
+  const [updatingJobId, setUpdatingJobId] = useState(null);
   // UI State
   const [activeTab, setActiveTab] = useState("");
   const [search, setSearch] = useState("");
@@ -141,12 +144,16 @@ const JobManagement = () => {
       return;
     }
     try {
+      setUpdatingJobId(id); // 👈 start loading
+
       await changeJobStatus(id, status);
       setJobs((prev) =>
         prev.map((j) => (j.id === id ? { ...j, jobStatus: status } : j)),
       );
     } catch (err) {
       console.error("Error updating status:", err);
+    } finally {
+      setUpdatingJobId(null); // 👈 stop loading
     }
   };
 
@@ -455,14 +462,20 @@ const JobManagement = () => {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setOpenDropdownId(
-                                    openDropdownId === job.id ? null : job.id,
+                                    openDropdownId === job.id ? null : job.id,  
                                   );
                                 }}
+                                disabled={updatingJobId === job.id}
                                 className="p-2 text-brand-primary/40 hover:bg-white rounded-xl transition-all shadow-hover-sm"
                               >
-                                <MoreVertical className="w-5 h-5" />
+                                {updatingJobId === job.id ? (
+                                  <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : (
+                                  <MoreVertical className="w-5 h-5" />
+                                )}
                               </button>
-                            )}
+                            )}  
+
                             {openDropdownId === job.id && (
                               <div className="absolute right-0  -bottom-12  mb-2 w-44 bg-white rounded-2xl shadow-xl border border-brand-primary/5 py-2 z-10">
                                 {jobStatus === "REVIEW" && (
@@ -561,7 +574,10 @@ const JobManagement = () => {
                                           await deleteJobPosition(job.id);
                                           fetchJobs(activeTab, currentPage);
                                         } catch (err) {
-                                          console.error("Error deleting job:", err);
+                                          console.error(
+                                            "Error deleting job:",
+                                            err,
+                                          );
                                         }
                                       }}
                                       className="w-full text-left px-4 py-2 text-[10px] font-bold text-red-400 hover:bg-red-50 uppercase tracking-wider flex items-center gap-2"
