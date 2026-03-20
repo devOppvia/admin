@@ -812,7 +812,8 @@ export const sendSupportMessage = async (body) => {
     let response = await api.post("/support/add-support-message", body);
     return response.data;
   } catch (error) {
-    return error.response.data;
+    console.log(error.response.data.error)
+    return error.response;
   }
 };
 

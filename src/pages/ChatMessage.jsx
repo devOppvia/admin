@@ -20,7 +20,12 @@ import {
   sendSupportMessage,
   closeSupportTicket,
 } from "../helper/api_helper";
+import { io } from "socket.io-client";
+import toast from "react-hot-toast";
+
 const IMAGE_BASE_URL = import.meta.env.VITE_IMG_URL;
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
+
 const ChatMessage = () => {
   const [tickets, setTickets] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -31,6 +36,8 @@ const ChatMessage = () => {
   const [filePreview, setFilePreview] = useState(null);
   const fileInputRef = useRef(null);
   const activeTicket = tickets.find((t) => t.id === activeTicketId);
+
+  const socketRef = useRef(null);
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
@@ -102,9 +109,11 @@ const ChatMessage = () => {
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
-        fetchMessages(activeTicketId);
+        // fetchMessages(activeTicketId);
       }
     } catch (err) {
+      const errorMessage = err?.response?.data?.message || err?.message || "Something went wrong";
+      toast.error(errorMessage);
       console.log(err);
     }
   };
@@ -140,6 +149,41 @@ const ChatMessage = () => {
     if (activeTicketId) {
       fetchMessages(activeTicketId);
     }
+  }, [activeTicketId]);
+
+  useEffect(() => {
+    socketRef.current = io(SOCKET_URL);
+
+    // register admin
+    socketRef.current.emit("register_admin");
+
+    return () => {
+      socketRef.current.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (activeTicketId && socketRef.current) {
+      socketRef.current.emit("join_support", activeTicketId);
+    }
+  }, [activeTicketId]);
+
+  useEffect(() => {
+    if (!socketRef.current) return;
+
+    socketRef.current.on("new_message", (msg) => {
+      if (msg.supportId === activeTicketId) {
+        setMessages((prev) => {
+          // prevent duplicate
+          if (prev.find((m) => m.id === msg.id)) return prev;
+          return [...prev, msg];
+        });
+      }
+    });
+
+    return () => {
+      socketRef.current.off("new_message");
+    };
   }, [activeTicketId]);
 
   const formatDate = (dateString) => {
@@ -302,7 +346,7 @@ const ChatMessage = () => {
                       href={IMAGE_BASE_URL + "/" + msg.attachment}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex bg-brand-primary/5 text-brand-primary p-2 rounded-lg items-center gap-2 mt-2"
+                      className={`flex bg-brand-primary/5 text-brand-primary p-2 rounded-lg items-center gap-2 mt-2 ${msg.isRepliedByAdmin ? "bg-white/20 text-white" : "bg-brand-primary/10 text-brand-primary/40"}`}
                     >
                       <File className="w-5 h-5" />
                       <span className="text-[9px] font-bold uppercase tracking-widest">
