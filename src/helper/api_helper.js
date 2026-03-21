@@ -835,7 +835,7 @@ export const changeJobStatus = async (id, status, rejectReason) => {
   try {
     let response = await api.put(`/jobs/update-job-status/${id}`, {
       jobStatus: status,
-      reason: rejectReason
+      reason: rejectReason,
     });
     return response.data;
   } catch (error) {
