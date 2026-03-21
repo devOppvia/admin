@@ -156,12 +156,12 @@ const ContactInquiry = () => {
                                             >
                                                 <Eye className="w-4 h-4" />
                                             </button>
-                                            <button
+                                            {/* <button
                                                 onClick={() => { setItemToDelete(item); setShowDeleteModal(true); }}
                                                 className="p-2.5 bg-white text-red-500 rounded-xl shadow-sm hover:scale-110 transition-all border border-brand-primary/5"
                                             >
                                                 <Trash2 className="w-4 h-4" />
-                                            </button>
+                                            </button> */}
                                         </div>
                                     </td>
                                 </tr>

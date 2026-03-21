@@ -151,7 +151,8 @@ const BlogList = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-xs font-medium text-brand-primary/50">
                         <Calendar className="w-3.5 h-3.5" />
-                        {formatDate(post.createdAt)}
+                        {formatDate(post?.scheduledDate || post.createdAt)}
+                        {post?.scheduledDate && new Date(post.scheduledDate) > Date.now() && <span>(Scheduled)</span>}
                       </div>
                     </td>
                     {/* <td className="px-6 py-4">
@@ -176,7 +177,7 @@ const BlogList = () => {
                     </td> */}
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
-                          {/* <Link
+                        {/* <Link
                             to={`/blog/details/${post.id}`}
                             className="p-2 bg-brand-primary/5 text-brand-primary rounded-xl hover:bg-brand-primary/10 hover:scale-110 transition-all"
                             title="View"

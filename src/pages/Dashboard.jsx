@@ -96,7 +96,7 @@ const Dashboard = () => {
     },
     yaxis: { show: true },
     grid: { borderColor: "#f1f5f9" },
-    tooltip: { theme: "light" },
+    tooltip : {theme : "light"}
   };
 
   const chartSeries = [
@@ -117,7 +117,9 @@ const Dashboard = () => {
       type: "pie",
       toolbar: { show: false },
     },
-    colors: data?.jobStatus?.map((item) => jobStatusColors[item.label] || "#6B7280"),
+    colors: data?.jobStatus?.map(
+      (item) => jobStatusColors[item.label] || "#6B7280",
+    ),
     labels: data?.jobStatus?.map((item) => item.label),
     dataLabels: {
       enabled: true,
@@ -125,11 +127,12 @@ const Dashboard = () => {
         return val.toFixed(1) + "%";
       },
       style: {
-        fontSize: "12px",
+        fontSize: "14px",
         fontWeight: 700,
-        colors: ["#FFFFFF"],
+        colors: ["#0A3031"],
       },
     },
+    
     plotOptions: {
       pie: {
         donut: {
@@ -165,6 +168,23 @@ const Dashboard = () => {
         },
       },
     },
+    tooltip: {
+  enabled: true,
+  custom: function({ series, seriesIndex, w }) {
+    return `
+      <div style="
+        padding:8px 12px;
+        background:#ffffff;
+        color:#000000;
+        border-radius:8px;
+        font-size:12px;
+        font-weight:600;
+      ">
+        ${w.globals.labels[seriesIndex]}: ${series[seriesIndex]}
+      </div>
+    `;
+  }
+},
     legend: {
       show: true,
       position: "bottom",
