@@ -843,6 +843,17 @@ export const changeJobStatus = async (id, status, rejectReason) => {
   }
 };
 
+export const generateSubCategory = async (status) => {
+  try {
+    let response = await api.post(`/jobs/generate-subcategory`, {
+      category: status,
+    });
+    return response.data;
+  } catch (error) {
+    return error.response.data;
+  }
+};
+
 export const deleteJobPosition = async (id) => {
   try {
     let response = await api.delete(`/jobs/delete-job/${id}`);

@@ -32,6 +32,7 @@ import {
   createJobSubCategory,
   deleteJobCategory,
   deleteJobSubCategory,
+  generateSubCategory,
   getJobCategory,
   getJobSubCategory,
   updateJobCategory,
@@ -80,36 +81,14 @@ const TaxonomyManagement = () => {
   );
 
   const handleGenerateAI = async () => {
-    setIsGenerating(true);
-    // Simulate AI logic with realistic delays
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    let suggestions = [];
-    if (activeTab === "CATEGORIES") {
-      suggestions = [
-        "Artificial Intelligence",
-        "Cybersecurity",
-        "Cloud Infrastructure",
-        "UI/UX Design",
-        "Digital Marketing",
-        "Data Analytics",
-        "Product Management",
-      ];
-    } else if (activeTab === "SUBCATEGORIES") {
-      const cat = categories.find((c) => c.id === parseInt(newItem.categoryId));
-      suggestions = cat
-        ? [
-            `Advanced ${cat.name}`,
-            `${cat.name} Engineering`,
-            `${cat.name} Management`,
-            `Junior ${cat.name} Specialist`,
-            `Strategic ${cat.name}`,
-          ]
-        : ["Hospitality Management", "Event Planning", "Retail Operations"];
+    try {
+      setIsGenerating(true);
+      const res = await generateSubCategory(newItem.categoryId);
+      setAiSuggestions(res.data);
+      setIsGenerating(false);
+    } catch (error) {
+      setIsGenerating(false);
     }
-
-    setAiSuggestions(suggestions);
-    setIsGenerating(false);
   };
 
   const toggleSuggestion = (suggestion) => {
@@ -520,7 +499,7 @@ const TaxonomyManagement = () => {
                 <label className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest ml-1">
                   {currentTabTitle} Name
                 </label>
-                {!isEditing && (
+                {!isEditing && activeTab === "SUBCATEGORIES" && (
                   <button
                     type="button"
                     onClick={handleGenerateAI}

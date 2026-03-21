@@ -22,10 +22,10 @@ const Header = () => {
             {/* Right Actions */}
             <div className="flex items-center gap-4">
                 {/* Notifications */}
-                <button className="p-2.5 text-brand-primary/60 hover:bg-brand-primary/5 rounded-xl relative group transition-all">
+                {/* <button className="p-2.5 text-brand-primary/60 hover:bg-brand-primary/5 rounded-xl relative group transition-all">
                     <Bell className="w-[20px] h-[20px]" />
                     <span className="absolute top-2 right-2 w-2 h-2 bg-brand-accent rounded-full border-2 border-white" />
-                </button>
+                </button> */}
 
                 {/* User Profile */}
                 <div className="flex items-center gap-3 pl-4 border-l border-brand-primary/5">

@@ -34,9 +34,10 @@ const ChatMessage = () => {
   const [search, setSearch] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
+  const [allTickets, setAllTickets] = useState([]); // ✅ NEW
   const fileInputRef = useRef(null);
-  const activeTicket = tickets.find((t) => t.id === activeTicketId);
-
+  const activeTicket = allTickets.find((t) => t.id === activeTicketId) || null;
+  const messagesContainerRef = useRef(null);
   const socketRef = useRef(null);
 
   const handleFileSelect = (e) => {
@@ -51,15 +52,15 @@ const ChatMessage = () => {
       type: file.type,
     });
   };
-
   // ============================
   // GET TICKET LIST
   // ============================
   const fetchTickets = async () => {
     try {
-      const res = await getSupportTicketsList({ search });
+      const res = await getSupportTicketsList(); // ❌ remove search
       if (res.status) {
         setTickets(res.data);
+        setAllTickets(res.data); // ✅ store original
 
         if (!activeTicketId && res.data.length > 0) {
           setActiveTicketId(res.data[0].id);
@@ -69,6 +70,15 @@ const ChatMessage = () => {
       console.log(err);
     }
   };
+
+  const filteredTickets = allTickets.filter((ticket) => {
+    const searchText = search.toLowerCase();
+
+    return (
+      ticket.subject?.toLowerCase().includes(searchText) ||
+      ticket.fullName?.toLowerCase().includes(searchText)
+    );
+  });
 
   // ============================
   // GET MESSAGES
@@ -112,7 +122,8 @@ const ChatMessage = () => {
         // fetchMessages(activeTicketId);
       }
     } catch (err) {
-      const errorMessage = err?.response?.data?.message || err?.message || "Something went wrong";
+      const errorMessage =
+        err?.response?.data?.message || err?.message || "Something went wrong";
       toast.error(errorMessage);
       console.log(err);
     }
@@ -140,7 +151,7 @@ const ChatMessage = () => {
   // ============================
   useEffect(() => {
     fetchTickets();
-  }, [search]);
+  }, []);
 
   // ============================
   // LOAD MESSAGES
@@ -172,14 +183,21 @@ const ChatMessage = () => {
     if (!socketRef.current) return;
 
     socketRef.current.on("new_message", (msg) => {
-      if (msg.supportId === activeTicketId) {
-        setMessages((prev) => {
-          // prevent duplicate
-          if (prev.find((m) => m.id === msg.id)) return prev;
-          return [...prev, msg];
-        });
-      }
+  if (msg.supportId === activeTicketId) {
+    setMessages((prev) => {
+      if (prev.find((m) => m.id === msg.id)) return prev;
+      return [...prev, msg];
     });
+
+    // ✅ FORCE scroll
+    setTimeout(() => {
+      const el = messagesContainerRef.current;
+      if (el) {
+        el.scrollTop = el.scrollHeight;
+      }
+    }, 50);
+  }
+});
 
     return () => {
       socketRef.current.off("new_message");
@@ -194,12 +212,24 @@ const ChatMessage = () => {
     });
   };
 
+  useEffect(() => {
+    if (!messagesContainerRef.current) return;
+
+    const el = messagesContainerRef.current;
+
+    el.scrollTo({
+      top: el.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages]);
+
   return (
     <div className="h-[calc(100vh-160px)] flex animate-fadeIn overflow-hidden rounded-[40px] border border-brand-primary/5 shadow-soft bg-white">
       <input
         type="file"
         ref={fileInputRef}
         className="hidden"
+        accept="image/*,.pdf"
         onChange={handleFileSelect}
       />
       {/* Sidebar - Ticket List */}
@@ -220,31 +250,32 @@ const ChatMessage = () => {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto no-scrollbar p-4 space-y-2">
-          {tickets.map((ticket) => (
-            <button
-              key={ticket.id}
-              onClick={() => setActiveTicketId(ticket.id)}
-              className={`w-full text-left p-4 rounded-2xl transition-all group ${activeTicketId === ticket.id ? "bg-brand-primary text-white shadow-premium" : "hover:bg-brand-primary/5"}`}
-            >
-              <div className="flex justify-between items-start mb-1">
-                <h4
-                  className={`text-sm font-black truncate max-w-[140px] ${activeTicketId === ticket.id ? "text-white" : "text-brand-primary"}`}
-                >
-                  {ticket.fullName}
-                </h4>
-                <span
-                  className={`text-[8px] font-bold uppercase tracking-widest ${activeTicketId === ticket.id ? "text-white/40" : "text-brand-primary/20"}`}
-                >
-                  {formatDate(ticket.createdAt)}
-                </span>
-              </div>
-              <p
-                className={`text-[10px] font-medium truncate mb-3 ${activeTicketId === ticket.id ? "text-white/60" : "text-brand-primary/40"}`}
+          {filteredTickets?.length > 0 ? (
+            filteredTickets.map((ticket) => (
+              <button
+                key={ticket.id}
+                onClick={() => setActiveTicketId(ticket.id)}
+                className={`w-full text-left p-4 rounded-2xl transition-all group ${activeTicketId === ticket.id ? "bg-brand-primary text-white shadow-premium" : "hover:bg-brand-primary/5"}`}
               >
-                {ticket.subject}
-              </p>
-              <div className="flex items-center gap-2">
-                {/* <span
+                <div className="flex justify-between items-start mb-1">
+                  <h4
+                    className={`text-sm font-black truncate max-w-[140px] ${activeTicketId === ticket.id ? "text-white" : "text-brand-primary"}`}
+                  >
+                    {ticket.fullName}
+                  </h4>
+                  <span
+                    className={`text-[8px] font-bold uppercase tracking-widest ${activeTicketId === ticket.id ? "text-white/40" : "text-brand-primary/20"}`}
+                  >
+                    {formatDate(ticket.createdAt)}
+                  </span>
+                </div>
+                <p
+                  className={`text-[10px] font-medium truncate mb-3 ${activeTicketId === ticket.id ? "text-white/60" : "text-brand-primary/40"}`}
+                >
+                  {ticket.subject}
+                </p>
+                <div className="flex items-center gap-2">
+                  {/* <span
                   className={`px-2 py-0.5 rounded-lg text-[8px] font-black tracking-widest uppercase border ${
                     activeTicketId === ticket.id
                       ? "bg-white/10 text-white border-white/20"
@@ -253,22 +284,29 @@ const ChatMessage = () => {
                 >
                   {ticket.priority}
                 </span> */}
-                <span
-                  className={`px-2 py-0.5 rounded-lg text-[8px] font-black tracking-widest uppercase ${
-                    ticket.status === "OPEN"
-                      ? activeTicketId === ticket.id
-                        ? "bg-white/20 text-white"
-                        : "bg-green-100 text-green-700"
-                      : activeTicketId === ticket.id
-                        ? "bg-brand-accent/20 text-brand-accent"
-                        : "bg-brand-primary/10 text-brand-primary/40"
-                  }`}
-                >
-                  {ticket.status}
-                </span>
-              </div>
-            </button>
-          ))}
+                  <span
+                    className={`px-2 py-0.5 rounded-lg text-[8px] font-black tracking-widest uppercase ${
+                      ticket.status === "OPEN"
+                        ? activeTicketId === ticket.id
+                          ? "bg-white/20 text-white"
+                          : "bg-green-100 text-green-700"
+                        : activeTicketId === ticket.id
+                          ? "bg-brand-accent/20 text-brand-accent"
+                          : "bg-brand-primary/10 text-brand-primary/40"
+                    }`}
+                  >
+                    {ticket.status}
+                  </span>
+                </div>
+              </button>
+            ))
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-brand-primary text-sm font-medium max-w-sm mx-auto mb-10 text-center leading-relaxed">
+                No tickets found
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -329,7 +367,10 @@ const ChatMessage = () => {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-8 space-y-6 flex flex-col no-scrollbar bg-[radial-gradient(#005A5B10_1px,transparent_1px)] bg-size-[24px_24px]">
+          <div
+            ref={messagesContainerRef}
+            className="flex-1 overflow-y-auto p-8 space-y-6 flex flex-col no-scrollbar bg-[radial-gradient(#005A5B10_1px,transparent_1px)] bg-size-[24px_24px]"
+          >
             {messages?.map((msg, idx) => (
               <div
                 key={idx}
