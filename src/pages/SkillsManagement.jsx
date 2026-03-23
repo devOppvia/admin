@@ -44,6 +44,7 @@ import {
   updateJobSkills,
   deleteJobSkill,
 } from "../helper/api_helper";
+import toast from "react-hot-toast";
 
 const SkillsManagement = () => {
   const dispatch = useDispatch();
@@ -77,39 +78,6 @@ const SkillsManagement = () => {
   // Delete Confirmation
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-
-  const handleGenerateAI = async () => {
-    setIsGenerating(true);
-    // Simulate AI logic with realistic delays
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    let suggestions = [];
-    if (activeTab === "CATEGORIES") {
-      suggestions = [
-        "Artificial Intelligence",
-        "Cybersecurity",
-        "Cloud Infrastructure",
-        "UI/UX Design",
-        "Digital Marketing",
-        "Data Analytics",
-        "Product Management",
-      ];
-    } else if (activeTab === "SUBCATEGORIES") {
-      const cat = categories.find((c) => c.id === parseInt(newItem.categoryId));
-      suggestions = cat
-        ? [
-            `Advanced ${cat.name}`,
-            `${cat.name} Engineering`,
-            `${cat.name} Management`,
-            `Junior ${cat.name} Specialist`,
-            `Strategic ${cat.name}`,
-          ]
-        : ["Hospitality Management", "Event Planning", "Retail Operations"];
-    }
-
-    setAiSuggestions(suggestions);
-    setIsGenerating(false);
-  };
 
   const toggleSuggestion = (suggestion) => {
     setSelectedSuggestions((prev) =>
@@ -152,8 +120,14 @@ const SkillsManagement = () => {
       fetchSkills(page);
       setShowAddModal(false);
       resetForm();
+      setFormData({
+        skillName: "",
+        jobCategoryId: "",
+        jobSubCategoryId: "",
+      });
     } catch (err) {
-      console.log(err);
+      toast.error(err);
+      console.log("eror is. : ", err);
     }
   };
 
@@ -165,6 +139,8 @@ const SkillsManagement = () => {
 
       setShowDeleteModal(false);
     } catch (err) {
+      toast.error(err);
+
       console.log(err);
     }
   };
@@ -202,7 +178,7 @@ const SkillsManagement = () => {
       dispatch(setCategories(res.data.jobCategories));
 
       const total = res.data.totalCategories;
-      setTotalCategoryPages(Math.ceil(total / itemsPerPage));
+      setTotalPages(Math.ceil(total / itemsPerPage));
     } catch (error) {
       console.log(error);
     }
@@ -341,7 +317,16 @@ const SkillsManagement = () => {
       {/* Add/Edit Modal */}
       <Modal
         isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        onClose={() => {
+          resetForm();
+
+          setFormData({
+            skillName: "",
+            jobCategoryId: "",
+            jobSubCategoryId: "",
+          });
+          setShowAddModal(false);
+        }}
         title={isEditing ? `Edit Skill` : `Add New Skill`}
         maxWidth="600px"
       >
@@ -447,7 +432,11 @@ const SkillsManagement = () => {
           <div className="flex items-center gap-3 pt-6 border-t border-brand-primary/5">
             <button
               type="button"
-              onClick={() => setShowAddModal(false)}
+              onClick={() => {
+                resetForm();
+                setFormData({ skillName: "", jobCategoryId: "", jobSubCategoryId: "" });
+                setShowAddModal(false);
+              }}
               className="flex-1 px-6 py-4 bg-brand-primary/5 text-brand-primary rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-primary/10 transition-all"
             >
               Cancel

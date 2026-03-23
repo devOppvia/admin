@@ -47,7 +47,7 @@ function App() {
 
   return (
     <>
-      <Toaster position="top-right" />
+      <Toaster position="top-right" containerStyle={{ zIndex: 99999 }} />
       <BrowserRouter>
         <Routes>
           {/* Public Routes */}

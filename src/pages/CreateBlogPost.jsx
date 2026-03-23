@@ -98,8 +98,6 @@ const CreateBlogPost = () => {
     }
   }, [id, posts, isEdit]);
 
-   
-
   // TinyMCE configuration is handled in-line within the Editor component
 
   const handleImageChange = (e) => {
@@ -119,19 +117,19 @@ const CreateBlogPost = () => {
       toast.error("Please fill in required fields");
       return;
     }
-    if(formData.title.trim() === ""){
+    if (formData.title.trim() === "") {
       toast.error("Please enter a title");
       return;
     }
-    if(formData.categoryId.trim() === ""){
+    if (formData.categoryId.trim() === "") {
       toast.error("Please select a category");
       return;
     }
 
-    if(formData.title.trim().length > 50){
+    if (formData.title.trim().length > 50) {
       toast.error("Title must be less than 50 characters long");
       return;
-    } 
+    }
 
     // if(formData.description.trim().length > 1500){
     //   toast.error("Description must be less than 1500 characters long");
@@ -203,28 +201,28 @@ const CreateBlogPost = () => {
   };
 
   const toggleTag = (tag) => {
-  const currentTags = formData.tags || [];
-  const exists = currentTags.some((t) => t.id === tag.id);
+    const currentTags = formData.tags || [];
+    const exists = currentTags.some((t) => t.id === tag.id);
 
-  if (exists) {
+    if (exists) {
+      setFormData((prev) => ({
+        ...prev,
+        tags: currentTags.filter((t) => t.id !== tag.id),
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        tags: [...currentTags, tag], // always object
+      }));
+    }
+  };
+
+  const removeTag = (tagToRemove) => {
     setFormData((prev) => ({
       ...prev,
-      tags: currentTags.filter((t) => t.id !== tag.id),
+      tags: prev.tags.filter((t) => t.id !== tagToRemove.id),
     }));
-  } else {
-    setFormData((prev) => ({
-      ...prev,
-      tags: [...currentTags, tag], // always object
-    }));
-  }
-};
-
- const removeTag = (tagToRemove) => {
-  setFormData((prev) => ({
-    ...prev,
-    tags: prev.tags.filter((t) => t.id !== tagToRemove.id),
-  }));
-};
+  };
 
   const handleCategoryChange = (e) => {
     const categoryId = e.target.value;
@@ -263,12 +261,16 @@ const CreateBlogPost = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => handleSave("DRAFT")}
-            className="px-6 py-3.5 bg-white border border-brand-primary/10 text-brand-primary rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-brand-primary/5 transition-all flex items-center gap-2"
-          >
-            <Clock className="w-4 h-4" /> Save as Draft
-          </button>
+          {isEdit &&
+            formData.scheduledDate &&
+            new Date(formData.scheduledDate) > Date.now() && (
+              <div className="px-4 h-10 rounded-full flex justify-center items-center bg-orange-200">
+                <p className="text-xs font-black text-brand-primary/40 uppercase tracking-widest">
+                  Scheduled :{" "}
+                  {new Date(formData.scheduledDate).toDateString("DD/MM/YYYY")}
+                </p>
+              </div>
+            )}
           <button
             onClick={() => handleSave("PUBLISHED")}
             className="px-8 py-3.5 bg-brand-primary text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-premium hover:shadow-hover transition-all flex items-center gap-2"

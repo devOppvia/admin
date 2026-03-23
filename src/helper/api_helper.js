@@ -618,7 +618,7 @@ export const createJobCategory = async (categoryName) => {
     );
     return response.data;
   } catch (error) {
-    return error.response.data;
+    throw error.response.data.message;
   }
 };
 
@@ -646,7 +646,7 @@ export const deleteJobCategory = async (data) => {
     let response = await api.delete(`/job-category/delete-category/${data.id}`);
     return response.data;
   } catch (error) {
-    return error.response.data;
+    throw error.response.data.message;
   }
 };
 
@@ -657,7 +657,7 @@ export const updateJobCategory = async (id, categoryName) => {
     });
     return response.data;
   } catch (error) {
-    return error.response.data;
+    throw error.response.data.message;
   }
 };
 
@@ -666,7 +666,7 @@ export const createJobSubCategory = async (data) => {
     let response = await api.post("/job-subCategory/create-subCategory", data);
     return response.data;
   } catch (error) {
-    return error.response.data;
+    throw error.response.data.message;
   }
 };
 
@@ -710,7 +710,7 @@ export const updateJobSubCategory = async (
     });
     return response.data;
   } catch (error) {
-    return error.response.data;
+    throw error.response.data.message;
   }
 };
 
@@ -721,7 +721,7 @@ export const deleteJobSubCategory = async (data) => {
     );
     return response.data;
   } catch (error) {
-    return error.response.data;
+    throw error.response.data.message;
   }
 };
 
@@ -739,7 +739,7 @@ export const deleteJobSkill = async (data) => {
     let response = await api.delete(`/skills/delete-skill/${data.id}`);
     return response.data;
   } catch (error) {
-    return error.response.data;
+    throw error.response.data.message
   }
 };
 
@@ -917,8 +917,7 @@ export const createJobSkills = async (body) => {
     let response = await api.post("/skills/create-skill", body)
     return response.data
   } catch (error) {
-    console.error(error);
-    return error.response.data
+    throw error.response.data.message
   }
 }
 
@@ -927,8 +926,7 @@ export const updateJobSkills = async (id, data) => {
     let response = await api.put(`/skills/update-skill/${id}`, data)
     return response.data
   } catch (error) {
-    console.error(error);
-    return error.response.data
+    throw error.response.data.message
   }
 }
 

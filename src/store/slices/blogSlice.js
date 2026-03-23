@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { getAllBlogsApi, deleteBlogsApi, createBlogCategoryApi, updateBlogCategoryApi, getBlogCategoriesApi, deleteBlogcategoryApi, createBlogTagsApi, updateBlogTagsApi, getBlogTagsApi, deleteBlogTagsApi } from '../../helper/api_helper';
+import toast from 'react-hot-toast';
 
 // Async thunk for fetching all categories
 export const fetchCategories = createAsyncThunk(
@@ -13,6 +14,7 @@ export const fetchCategories = createAsyncThunk(
                 return rejectWithValue(response.message || 'Failed to fetch categories');
             }
         } catch (error) {
+            toast.error(error || 'Failed to fetch categories');
             return rejectWithValue(error.message || 'Failed to fetch categories');
         }
     }
@@ -30,7 +32,8 @@ export const createCategory = createAsyncThunk(
                 return rejectWithValue(response.message || 'Failed to create category');
             }
         } catch (error) {
-            return rejectWithValue(error.message || 'Failed to create category');
+            toast.error(error || 'Failed to fetch categories');
+            return rejectWithValue(error || 'Failed to create category');
         }
     }
 );
@@ -47,7 +50,9 @@ export const updateCategoryAsync = createAsyncThunk(
                 return rejectWithValue(response.message || 'Failed to update category');
             }
         } catch (error) {
-            return rejectWithValue(error.message || 'Failed to update category');
+                        toast.error(error || 'Failed to fetch categories');
+
+            return rejectWithValue(error || 'Failed to update category');
         }
     }
 );
@@ -64,7 +69,9 @@ export const deleteCategoryAsync = createAsyncThunk(
                 return rejectWithValue(response.message || 'Failed to delete category');
             }
         } catch (error) {
-            return rejectWithValue(error.message || 'Failed to delete category');
+                        toast.error(error || 'Failed to fetch categories');
+
+            return rejectWithValue(error       || 'Failed to delete category');
         }
     }
 );
@@ -81,7 +88,7 @@ export const fetchTags = createAsyncThunk(
                 return rejectWithValue(response.message || 'Failed to fetch tags');
             }
         } catch (error) {
-            return rejectWithValue(error.message || 'Failed to fetch tags');
+            return rejectWithValue(error || 'Failed to fetch tags');
         }
     }
 );
@@ -98,7 +105,9 @@ export const createTag = createAsyncThunk(
                 return rejectWithValue(response.message || 'Failed to create tag');
             }
         } catch (error) {
-            return rejectWithValue(error.message || 'Failed to create tag');
+                                    toast.error(error || 'Failed to fetch categories');
+
+            return rejectWithValue(error || 'Failed to create tag');
         }
     }
 );
@@ -115,7 +124,9 @@ export const updateTagAsync = createAsyncThunk(
                 return rejectWithValue(response.message || 'Failed to update tag');
             }
         } catch (error) {
-            return rejectWithValue(error.message || 'Failed to update tag');
+                                    toast.error(error || 'Failed to fetch categories');
+
+            return rejectWithValue(error || 'Failed to update tag');
         }
     }
 );
@@ -132,7 +143,9 @@ export const deleteTagAsync = createAsyncThunk(
                 return rejectWithValue(response.message || 'Failed to delete tag');
             }
         } catch (error) {
-            return rejectWithValue(error.message || 'Failed to delete tag');
+                                    toast.error(error || 'Failed to fetch categories');
+
+            return rejectWithValue(error || 'Failed to delete tag');
         }
     }
 );
@@ -149,7 +162,9 @@ export const fetchBlogs = createAsyncThunk(
                 return rejectWithValue(response.message || 'Failed to fetch blogs');
             }
         } catch (error) {
-            return rejectWithValue(error.message || 'Failed to fetch blogs');
+                                    toast.error(error || 'Failed to fetch categories');
+
+            return rejectWithValue(error || 'Failed to fetch blogs');
         }
     }
 );
@@ -166,7 +181,9 @@ export const deleteBlog = createAsyncThunk(
                 return rejectWithValue(response.message || 'Failed to delete blog');
             }
         } catch (error) {
-            return rejectWithValue(error.message || 'Failed to delete blog');
+                                    toast.error(error || 'Failed to fetch categories');
+
+            return rejectWithValue(error || 'Failed to delete blog');
         }
     }
 );

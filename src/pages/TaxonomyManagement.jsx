@@ -39,6 +39,7 @@ import {
   updateJobSubCategory,
 } from "../helper/api_helper";
 import Checkbox from "../components/common/Checkbox";
+import toast from "react-hot-toast";
 const TABS = [
   { key: "CATEGORIES", name: "Categories", icon: LayoutGrid },
   { key: "SUBCATEGORIES", name: "Sub-Categories", icon: Layers },
@@ -121,57 +122,53 @@ const TaxonomyManagement = () => {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const timestamp = new Date().toISOString();
 
-    if (isEditing) {
-      if (activeTab === "CATEGORIES") {
-        await updateJobCategory(editingId, newItem.categoryName);
-
-        fetchJobCategory(categoryPage);
-      } else if (activeTab === "SUBCATEGORIES") {
-        const parent = categories.find(
-          (c) => c.id === parseInt(newItem.categoryId),
-        );
-        await updateJobSubCategory(
-          editingId,
-          newItem.categoryName,
-          newItem.categoryId,
-        );
-
-        fetchJobSubCategory(newItem.categoryId, subCategoryPage);
-      }
-    } else {
-      const itemsToAdd =
-        selectedSuggestions.length > 0
-          ? selectedSuggestions
-          : [newItem.categoryName];
-      itemsToAdd.forEach(async (name) => {
-        if (!name?.trim()) return;
-
+    try {
+      if (isEditing) {
         if (activeTab === "CATEGORIES") {
-          const payload = {
-            categoryName: name,
-            currentPage: categoryPage,
-            itemsPerPage: itemsPerPage,
-          };
-
-          await createJobCategory(payload);
+          await updateJobCategory(editingId, newItem.categoryName);
           fetchJobCategory(categoryPage);
-        }
-
-        if (activeTab === "SUBCATEGORIES") {
-          await createJobSubCategory({
-            subCategoryName: { subCategoryName: [name] },
-            jobCategoryId: newItem.categoryId,
-          });
-
+        } else if (activeTab === "SUBCATEGORIES") {
+          await updateJobSubCategory(
+            editingId,
+            newItem.categoryName,
+            newItem.categoryId,
+          );
           fetchJobSubCategory(newItem.categoryId, subCategoryPage);
         }
-      });
-    }
+      } else {
+        const itemsToAdd =
+          selectedSuggestions.length > 0
+            ? selectedSuggestions
+            : [newItem.categoryName];
 
-    setShowAddModal(false);
-    resetForm();
+        for (const name of itemsToAdd) {
+          if (!name?.trim()) continue;
+
+          if (activeTab === "CATEGORIES") {
+            await createJobCategory({
+              categoryName: name,
+              currentPage: categoryPage,
+              itemsPerPage: itemsPerPage,
+            });
+            fetchJobCategory(categoryPage);
+          }
+
+          if (activeTab === "SUBCATEGORIES") {
+            await createJobSubCategory({
+              subCategoryName: { subCategoryName: [name] },
+              jobCategoryId: newItem.categoryId,
+            });
+            fetchJobSubCategory(newItem.categoryId, subCategoryPage);
+          }
+        }
+      }
+
+      setShowAddModal(false);
+      resetForm();
+    } catch (err) {
+      toast.error(err);
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -185,8 +182,8 @@ const TaxonomyManagement = () => {
       }
 
       setShowDeleteModal(false);
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      toast.error(err);
     }
   };
 
@@ -291,7 +288,7 @@ const TaxonomyManagement = () => {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all group ${
+                className={`w-full flex items-center mb-2 justify-between p-4 rounded-2xl transition-all group ${
                   activeTab === tab.key
                     ? "bg-brand-primary text-white shadow-lg shadow-brand-primary/20"
                     : "text-brand-primary/50 hover:bg-brand-primary/5"
@@ -353,7 +350,7 @@ const TaxonomyManagement = () => {
                       <LayoutGrid className="w-5 h-5 text-brand-primary/40" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-black text-brand-primary tracking-tight mb-1">
+                      <p className="text-sm break-words sm:max-w-24 md:max-w-24 lg:max-w-60 font-black text-brand-primary tracking-tight mb-1">
                         {cat.categoryName}
                       </p>
                       <div className="flex items-center gap-3">
