@@ -12,6 +12,7 @@ import {
   Trash2,
   File,
   Link,
+  FileText,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -80,6 +81,12 @@ const ChatMessage = () => {
     );
   });
 
+  const ticketAttachmentUrl =
+    IMAGE_BASE_URL +
+      "/" +
+      filteredTickets?.find((tik) => tik.id === messages?.[0]?.supportId)
+        ?.attachment || null;
+
   // ============================
   // GET MESSAGES
   // ============================
@@ -98,7 +105,7 @@ const ChatMessage = () => {
   // SEND MESSAGE
   // ============================
   const handleSendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && !selectedFile) return;
 
     try {
       const formData = new FormData();
@@ -183,21 +190,21 @@ const ChatMessage = () => {
     if (!socketRef.current) return;
 
     socketRef.current.on("new_message", (msg) => {
-  if (msg.supportId === activeTicketId) {
-    setMessages((prev) => {
-      if (prev.find((m) => m.id === msg.id)) return prev;
-      return [...prev, msg];
-    });
+      if (msg.supportId === activeTicketId) {
+        setMessages((prev) => {
+          if (prev.find((m) => m.id === msg.id)) return prev;
+          return [...prev, msg];
+        });
 
-    // ✅ FORCE scroll
-    setTimeout(() => {
-      const el = messagesContainerRef.current;
-      if (el) {
-        el.scrollTop = el.scrollHeight;
+        // ✅ FORCE scroll
+        setTimeout(() => {
+          const el = messagesContainerRef.current;
+          if (el) {
+            el.scrollTop = el.scrollHeight;
+          }
+        }, 50);
       }
-    }, 50);
-  }
-});
+    });
 
     return () => {
       socketRef.current.off("new_message");
@@ -371,6 +378,36 @@ const ChatMessage = () => {
             ref={messagesContainerRef}
             className="flex-1 overflow-y-auto p-8 space-y-6 flex flex-col no-scrollbar bg-[radial-gradient(#005A5B10_1px,transparent_1px)] bg-size-[24px_24px]"
           >
+            {activeTicket?.attachment && ticketAttachmentUrl && (
+              <div className="relative flex gap-6 py-6 items-center group max-h-40 w-fit bg-gray-100 p-4 border rounded-xl mx-auto overflow-hidden">
+                <div className="flex gap-2 items-center justify-center h-full w-full">
+                  <FileText size={24} className="text-brand-primary" />
+                  <p className="text-brand-primary text-sm font-bold">
+                    {activeTicket?.attachment}
+                  </p>
+                </div>
+
+                <div className="transition-all duration-300 flex flex-col items-center justify-center gap-4 rounded-xl">
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => window.open(ticketAttachmentUrl, "_blank")}
+                      className="px-4 py-2 text-xs font-bold bg-white text-black rounded-lg hover:bg-gray-200"
+                    >
+                      View
+                    </button>
+
+                    {/* Download Button */}
+                    <a
+                      href={ticketAttachmentUrl}
+                      download={activeTicket?.attachment}
+                      className="px-4 py-2 text-xs font-bold bg-brand-primary text-white rounded-lg hover:bg-brand-primary-light"
+                    >
+                      Download
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
             {messages?.map((msg, idx) => (
               <div
                 key={idx}
@@ -482,7 +519,7 @@ const ChatMessage = () => {
               </button>
               <button
                 onClick={handleSendMessage}
-                disabled={activeTicket?.status !== "OPEN"}
+                disabled={activeTicket?.status !== "OPEN" || (!input.trim() && !selectedFile)}
                 className="w-12 h-12 bg-brand-primary text-white rounded-xl flex items-center justify-center hover:bg-brand-primary-light transition-all shadow-premium group disabled:opacity-50 disabled:grayscale"
               >
                 <Send className="w-5 h-5 text-brand-accent group-hover:scale-110 transition-transform" />
