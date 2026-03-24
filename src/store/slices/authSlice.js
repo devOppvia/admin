@@ -54,6 +54,9 @@ const authSlice = createSlice({
             state.userLoginId = null;
             state.isAuthenticated = false;
             state.error = null;
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('adminData');
+            localStorage.removeItem('user-login-id');
         },
     },
 });

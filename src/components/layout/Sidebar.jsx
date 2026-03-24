@@ -140,6 +140,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { logout } from "../../store/slices/authSlice";
 
 const Sidebar = () => {
   // On tablet (md), start collapsed; on desktop (lg+), start expanded
@@ -187,6 +188,7 @@ const Sidebar = () => {
     localStorage.removeItem("adminData");
     localStorage.removeItem("user-login-id");
     window.location.href = "/";
+    dispatch(logout());
   };
 
   return (

@@ -219,14 +219,11 @@ const Dashboard = () => {
 
   const getData = async () => {
     try {
-      const [dashboardRes, jobStatusRes] = await Promise.all([
+      const [dashboardRes] = await Promise.all([
         getDashboardDetailsAdminApi(),
       ]);
       if (dashboardRes.status) {
         setData(dashboardRes.data);
-      }
-      if (jobStatusRes.status) {
-        setJobStatus(jobStatusRes.data);
       }
     } catch (error) {
       console.log(error);
@@ -237,7 +234,6 @@ const Dashboard = () => {
     getData();
   }, []);
 
-  console.log("data : ", data);
 
   return (
     <div className="space-y-8 p-1">

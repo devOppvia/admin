@@ -410,7 +410,7 @@ const ChatMessage = () => {
             )}
             {messages?.map((msg, idx) => (
               <div
-                key={idx}
+                key={msg?.id || idx}
                 className={`flex flex-col ${msg.isRepliedByAdmin ? "items-end" : "items-start"}`}
               >
                 <div

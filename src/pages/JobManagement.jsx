@@ -195,33 +195,6 @@ const JobManagement = () => {
     }
   };
 
-  const handleBulkStatusChange = async (status) => {
-    try {
-      await Promise.all(selectedJobs.map((id) => changeJobStatus(id, status)));
-      setJobs((prev) =>
-        prev.map((j) =>
-          selectedJobs.includes(j.id) ? { ...j, jobStatus: status } : j,
-        ),
-      );
-      setSelectedJobs([]);
-    } catch (err) {
-      console.error("Error updating bulk status:", err);
-    }
-  };
-
-  const handleSelectJob = (id) => {
-    setSelectedJobs((prev) =>
-      prev.includes(id) ? prev.filter((jobId) => jobId !== id) : [...prev, id],
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedJobs.length === filteredJobs.length) {
-      setSelectedJobs([]);
-    } else {
-      setSelectedJobs(filteredJobs.map((job) => job.id));
-    }
-  };
 
   const getStatusStyle = (status) => {
     switch (status) {

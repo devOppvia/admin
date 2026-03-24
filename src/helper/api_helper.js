@@ -7,7 +7,7 @@ const api = axios.create({ baseURL: BASE_URL, withCredentials: true });
 const addressApi = axios.create({ baseURL: BASE_URL, withCredentials: true });
 
 const getAccessToken = () => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("accessToken");
   return token;
 };
 
@@ -27,6 +27,13 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    if(error.response?.status === 404 && error.response?.data?.code === "INVALID_ADMIN"){
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("adminData");
+      localStorage.removeItem("user-login-id");
+      window.location.href = "/";
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
@@ -37,7 +44,7 @@ api.interceptors.response.use(
         );
         const newAccessToken = res.data.data.accessToken;
         if (newAccessToken) {
-          localStorage.setItem("token", newAccessToken);
+          localStorage.setItem("accessToken", newAccessToken);
           api.defaults.headers.common[
             "Authorization"
           ] = `Bearer ${newAccessToken}`;
@@ -47,7 +54,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         console.error("Refresh token failed:", refreshError);
-        localStorage.removeItem("token");
+        localStorage.removeItem("accessToken");
         window.location.href = "/";
       }
     }
@@ -426,7 +433,7 @@ export const getTestimonialsApi = async (userData) => {
     let response = await api.get(`/testimonials/get-testimonials`);
     return response.data;
   } catch (error) {
-    throw error.reponse.data.message || "Check Network Connection";
+    throw error.response.data.message || "Check Network Connection";
   }
 };
 
@@ -435,7 +442,7 @@ export const deleteTestimonialApi = async (id) => {
     let response = await api.delete(`/testimonials/delete-testimonial/${id}`);
     return response.data;
   } catch (error) {
-    throw error.reponse.data.message || "Check Network Connection";
+    throw error.response.data.message || "Check Network Connection";
   }
 };
 
@@ -812,7 +819,6 @@ export const sendSupportMessage = async (body) => {
     let response = await api.post("/support/add-support-message", body);
     return response.data;
   } catch (error) {
-    console.log(error.response.data.error)
     return error.response;
   }
 };

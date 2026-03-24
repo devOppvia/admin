@@ -54,9 +54,9 @@ const CompanyManagement = () => {
   const filteredCompanies = useMemo(() => {
     return list.filter((company) => {
       const matchesSearch =
-        company.companyName?.toLowerCase().includes(search.toLowerCase()) ||
-        company.email?.toLowerCase().includes(search.toLowerCase()) ||
-        company.industryType?.toLowerCase().includes(search.toLowerCase());
+        company?.companyName?.toLowerCase()?.includes(search?.toLowerCase()) ||
+        company?.email?.toLowerCase()?.includes(search?.toLowerCase()) ||
+        company?.industryType?.toLowerCase()?.includes(search?.toLowerCase());
       return matchesSearch;
     });
   }, [list, search]);
