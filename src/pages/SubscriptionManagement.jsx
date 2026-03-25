@@ -45,6 +45,7 @@ const SubscriptionManagement = () => {
     numberOfResumeAccess: "",
     jobDaysActive: "",
     expireDaysPackage: "",
+    isRecommended: false,
   });
 
   const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null });
@@ -80,6 +81,7 @@ const SubscriptionManagement = () => {
         numberOfResumeAccess: "",
         jobDaysActive: "",
         expireDaysPackage: "",
+        isRecommended: false,
       });
       setIsEdit(false);
     }
@@ -271,6 +273,12 @@ const SubscriptionManagement = () => {
                 key={pack.id}
                 className="bg-white rounded-[32px] p-8 border border-brand-primary/5 shadow-soft relative overflow-hidden group hover:border-brand-primary/20 transition-all"
               >
+                {/* Recommended Badge */}
+                {pack.isRecommended && (
+                  <div className="absolute top-0 right-8 bg-brand-primary text-white text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-b-xl">
+                    Recommended
+                  </div>
+                )}
                 {/* Package Header */}
                 <div className="flex justify-between items-start mb-6">
                   <span className="px-4 py-2 border border-brand-primary/20 rounded-full text-[10px] font-black uppercase tracking-widest text-brand-primary">
@@ -588,6 +596,54 @@ const SubscriptionManagement = () => {
                       e.preventDefault()
                     }
                   />
+                </div>
+
+                {/* Is Recommended */}
+                <div className="md:col-span-2">
+                  <label className="flex items-center gap-3 cursor-pointer group/check w-fit">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={newPackage.isRecommended}
+                        onChange={(e) =>
+                          setNewPackage({
+                            ...newPackage,
+                            isRecommended: e.target.checked,
+                          })
+                        }
+                      />
+                      <div
+                        className={`w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center ${
+                          newPackage.isRecommended
+                            ? "bg-brand-primary border-brand-primary"
+                            : "bg-white border-brand-primary/20 group-hover/check:border-brand-primary/40"
+                        }`}
+                      >
+                        {newPackage.isRecommended && (
+                          <svg
+                            className="w-3 h-3 text-white"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={3}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-sm font-bold text-brand-primary">
+                      Mark as Recommended
+                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-brand-primary/40">
+                      (shows badge on plan card)
+                    </span>
+                  </label>
                 </div>
               </form>
             </div>
