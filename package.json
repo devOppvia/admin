@@ -21,6 +21,7 @@
     "npm": "^11.11.1",
     "react": "^19.2.0",
     "react-apexcharts": "^2.0.1",
+    "react-cookie": "^8.0.1",
     "react-dom": "^19.2.0",
     "react-hot-toast": "^2.6.0",
     "react-quill-new": "^3.8.3",

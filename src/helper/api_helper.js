@@ -27,15 +27,24 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if(error.response?.status === 404 && error.response?.data?.code === "INVALID_ADMIN"){
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("adminData");
-      localStorage.removeItem("user-login-id");
-      window.location.href = "/";
-    }
+    // if(error.response?.status === 404 && error.response?.data?.code === "INVALID_ADMIN"){
+    //   localStorage.removeItem("accessToken");
+    //   localStorage.removeItem("adminData");
+    //   localStorage.removeItem("user-login-id");
+    //   window.location.href = "/";
+    // }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+     console.log("response is : : : " , error.response.data?.code + " == " , error.response?.data?.code === "INVALID_ADMIN")
+      if(error.response?.data?.code === "INVALID_ADMIN"){
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("adminData");
+        localStorage.removeItem("user-login-id");
+        window.location.href = "/";
+
+        return;
+      }
       try {
         const res = await axios.post(
           `${BASE_URL}/auth/refresh-token`,
@@ -53,8 +62,12 @@ api.interceptors.response.use(
 
         return api(originalRequest);
       } catch (refreshError) {
+        console.log("error : ==> " , refreshError)
         console.error("Refresh token failed:", refreshError);
         localStorage.removeItem("accessToken");
+        localStorage.removeItem("adminData");
+        localStorage.removeItem("user-login-id");
+
         window.location.href = "/";
       }
     }
