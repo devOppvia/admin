@@ -43,7 +43,9 @@ import {
   createJobSkills,
   updateJobSkills,
   deleteJobSkill,
+  generateSkills,
 } from "../helper/api_helper";
+import Checkbox from "../components/common/Checkbox";
 import toast from "react-hot-toast";
 
 const SkillsManagement = () => {
@@ -79,6 +81,29 @@ const SkillsManagement = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
+  const handleGenerateAI = async () => {
+    try {
+      setIsGenerating(true);
+      const res = await generateSkills({
+        jobCategoryId: formData.jobCategoryId,
+        jobSubCategoryId: formData.jobSubCategoryId,
+      });
+      const suggestions = Array.isArray(res.data) ? res.data : [];
+      if (suggestions.length === 0) {
+        toast.error("No suggestions available. Try a different selection.");
+      }
+      setAiSuggestions(suggestions);
+    } catch (error) {
+      const message =
+        error?.response?.data?.message ||
+        error ||
+        "Failed to generate suggestions. Please try again.";
+      toast.error(message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const toggleSuggestion = (suggestion) => {
     setSelectedSuggestions((prev) =>
       prev.includes(suggestion)
@@ -110,8 +135,12 @@ const SkillsManagement = () => {
           skillName: formData.skillName,
         });
       } else {
+        const skillNames =
+          selectedSuggestions.length > 0
+            ? selectedSuggestions
+            : [formData.skillName];
         await createJobSkills({
-          skillName: [formData.skillName],
+          skillName: skillNames,
           jobCategoryId: formData.jobCategoryId,
           jobSubCategoryId: formData.jobSubCategoryId,
         });
@@ -338,6 +367,25 @@ const SkillsManagement = () => {
                 <label className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest ml-1">
                   Skill Name
                 </label>
+                {!isEditing && (
+                  <button
+                    type="button"
+                    onClick={handleGenerateAI}
+                    disabled={
+                      isGenerating ||
+                      !formData.jobCategoryId ||
+                      !formData.jobSubCategoryId
+                    }
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-primary text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-brand-primary-light transition-all disabled:opacity-30"
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Wand2 className="w-3 h-3" />
+                    )}
+                    Generate Suggestions
+                  </button>
+                )}
               </div>
               <select
                 className="w-full p-4 rounded-xl border"
@@ -425,6 +473,7 @@ const SkillsManagement = () => {
                   </div>
                 </div>
               )}
+
             </div>
           </div>
 
@@ -444,14 +493,18 @@ const SkillsManagement = () => {
             <button
               type="submit"
               disabled={
-                !formData.skillName?.trim() ||
+                (!formData.skillName?.trim() && selectedSuggestions.length === 0) ||
                 !formData.jobCategoryId ||
                 !formData.jobSubCategoryId
               }
               className="flex-1 px-6 py-4 bg-brand-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-premium hover:shadow-hover transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <CheckCircle2 className="w-4 h-4" />
-              {isEditing ? "Save Changes" : "Save Entry"}
+              {isEditing
+                ? "Save Changes"
+                : selectedSuggestions.length > 1
+                  ? `Save ${selectedSuggestions.length} Skills`
+                  : "Save Entry"}
             </button>
           </div>
         </form>

@@ -32,6 +32,7 @@ import {
   createJobSubCategory,
   deleteJobCategory,
   deleteJobSubCategory,
+  generateCategory,
   generateSubCategory,
   getJobCategory,
   getJobSubCategory,
@@ -84,10 +85,23 @@ const TaxonomyManagement = () => {
   const handleGenerateAI = async () => {
     try {
       setIsGenerating(true);
-      const res = await generateSubCategory(newItem.categoryId);
-      setAiSuggestions(res.data);
-      setIsGenerating(false);
+      let res;
+      if (activeTab === "CATEGORIES") {
+        res = await generateCategory(newItem.categoryName);
+      } else {
+        res = await generateSubCategory(newItem.categoryId);
+      }
+      const suggestions = Array.isArray(res.data) ? res.data : [];
+      if (suggestions.length === 0) {
+        toast.error("No suggestions available. Try a different input.");
+      }
+      setAiSuggestions(suggestions);
     } catch (error) {
+      const message =
+        error?.response?.data?.message ||
+        "Failed to generate suggestions. Please try again.";
+      toast.error(message);
+    } finally {
       setIsGenerating(false);
     }
   };
@@ -496,13 +510,13 @@ const TaxonomyManagement = () => {
                 <label className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest ml-1">
                   {currentTabTitle} Name
                 </label>
-                {!isEditing && activeTab === "SUBCATEGORIES" && (
+                {!isEditing && (activeTab === "CATEGORIES" || activeTab === "SUBCATEGORIES") && (
                   <button
                     type="button"
                     onClick={handleGenerateAI}
                     disabled={
                       isGenerating ||
-                      (activeTab === "SKILLS" && !newItem.subCategoryId) ||
+                      (activeTab === "CATEGORIES" && !newItem.categoryName.trim()) ||
                       (activeTab === "SUBCATEGORIES" && !newItem.categoryId)
                     }
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-primary text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-brand-primary-light transition-all disabled:opacity-30"

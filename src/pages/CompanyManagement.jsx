@@ -15,6 +15,7 @@ import {
   Loader2,
   X,
   AlertTriangle,
+  Star,
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import CompanyDetailsModal from "../components/modals/CompanyDetailsModal";
@@ -172,6 +173,7 @@ const CompanyManagement = () => {
                     <th className="px-6 py-2">Industry</th>
                     <th className="px-6 py-2">Registration Date</th>
                     <th className="px-6 py-2 text-center">Status</th>
+                    <th className="px-6 py-2 text-center">Score</th>
                     <th className="px-6 py-2 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -236,6 +238,16 @@ const CompanyManagement = () => {
                                             `}
                         >
                           {company.companyStatus}
+                        </span>
+                      </td>
+                      <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5 text-center group-hover:border-brand-primary/10 transition-colors">
+                        <span
+                          className={
+                            "px-4 py-1.5 flex gap-1 items-center text-black bg-gray-100 rounded-full text-sm font-black tracking-widest uppercase "
+                          }
+                        >
+                          <Star className="w-3.5 h-3.5 text-yellow-500" />
+                          {company.AiScore}
                         </span>
                       </td>
                       <td className="bg-brand-primary/2 px-6 py-5 rounded-r-3xl border-y border-r border-brand-primary/5 text-right group-hover:border-brand-primary/10 transition-colors">
@@ -332,7 +344,6 @@ const RejectReasonModal = ({ company, onConfirm, onCancel }) => {
   return (
     <>
       {" "}
-    
       <div className="fixed inset-0 z-50 flex items-center justify-center">
         {/* Backdrop */}
         <div
@@ -372,8 +383,10 @@ const RejectReasonModal = ({ company, onConfirm, onCancel }) => {
               <label className="text-[11px] font-black text-brand-primary/40 uppercase tracking-widest">
                 Reason for Rejection
               </label>
-              <span className={`text-[10px] font-bold ${wordCount > 5 ? 'text-green-500' : 'text-brand-primary/40'}`}>
-                {wordCount} {wordCount === 1 ? 'word' : 'words'}
+              <span
+                className={`text-[10px] font-bold ${wordCount > 5 ? "text-green-500" : "text-brand-primary/40"}`}
+              >
+                {wordCount} {wordCount === 1 ? "word" : "words"}
               </span>
             </div>
             <textarea

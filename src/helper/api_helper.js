@@ -862,15 +862,18 @@ export const changeJobStatus = async (id, status, rejectReason) => {
   }
 };
 
+export const generateCategory = async (userInput) => {
+  let response = await api.post(`/job-category/generate-job-categories`, {
+    userInput,
+  });
+  return response.data;
+};
+
 export const generateSubCategory = async (status) => {
-  try {
-    let response = await api.post(`/jobs/generate-subcategory`, {
-      category: status,
-    });
-    return response.data;
-  } catch (error) {
-    return error.response.data;
-  }
+  let response = await api.post(`/jobs/generate-subcategory`, {
+    category: status,
+  });
+  return response.data;
 };
 
 export const deleteJobPosition = async (id) => {
@@ -939,6 +942,15 @@ export const createJobSkills = async (body) => {
     throw error.response.data.message
   }
 }
+
+export const generateSkills = async (body) => {
+  try {
+    let response = await api.post("/skills/generate-new-skills", body);
+    return response.data;
+  } catch (error) {
+    throw error.response.data.message;
+  }
+};
 
 export const updateJobSkills = async (id, data) => {
   try {
