@@ -23,6 +23,8 @@ import ContactInquiry from "./pages/ContactInquiry";
 import SubscriptionManagement from "./pages/SubscriptionManagement";
 import LoginPage from "./pages/LoginPage";
 import SkillsManagement from "./pages/SkillsManagement";
+import IncompleteProfileInterns from "./pages/IncompleteProfileInterns";
+import IncompleteProfileCompanies from "./pages/IncompleteProfileCompanies";
 import ProtectedRoute from "./authRoute/ProtectedRoute";
 import { CookiesProvider } from "react-cookie";
 
@@ -99,6 +101,8 @@ function App() {
               <Route path="chat-message" element={<ChatMessage />} />
               <Route path="contact-inquiry" element={<ContactInquiry />} />
               <Route path="pricing" element={<SubscriptionManagement />} />
+              <Route path="incomplete-profile-interns" element={<IncompleteProfileInterns />} />
+              <Route path="incomplete-profile-companies" element={<IncompleteProfileCompanies />} />
               {/* Add more routes based on SRS */}
               <Route path="*" element={<NotFound />} />
             </Route>

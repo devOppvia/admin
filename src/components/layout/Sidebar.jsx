@@ -139,6 +139,7 @@ import {
   LayoutGrid,
   ChevronLeft,
   ChevronRight,
+  UserX,
 } from "lucide-react";
 import { logout } from "../../store/slices/authSlice";
 
@@ -169,6 +170,18 @@ const Sidebar = () => {
     {
       label: "Content",
       items: [{ name: "Blogs", icon: FileText, path: "/blog" }],
+    },
+    {
+      label: "Interns",
+      items: [
+        { name: "Incomplete Profiles", icon: UserX, path: "/incomplete-profile-interns" },
+      ],
+    },
+    {
+      label: "Companies",
+      items: [
+        { name: "Incomplete Profiles", icon: UserX, path: "/incomplete-profile-companies" },
+      ],
     },
     {
       label: "Support",

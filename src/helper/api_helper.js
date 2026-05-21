@@ -1012,4 +1012,22 @@ export const updateBulkResumeStatus = async (body) => {
   }
 }
 
+export const getIncompleteProfileInternsApi = async (page, limit) => {
+  try {
+    let response = await api.post("/admin/get-incomplete-profile-interns", { page, limit });
+    return response.data;
+  } catch (error) {
+    return error.response.data;
+  }
+};
+
+export const getPendingProfileCompaniesApi = async (page, limit) => {
+  try {
+    let response = await api.post("/admin/get-pending-profile-companies", { page, limit });
+    return response.data;
+  } catch (error) {
+    return error.response.data;
+  }
+};
+
 export { api, addressApi };
