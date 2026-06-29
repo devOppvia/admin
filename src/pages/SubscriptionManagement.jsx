@@ -39,6 +39,8 @@ const SubscriptionManagement = () => {
   const [newPackage, setNewPackage] = useState({
     id: null,
     packageName: "",
+    isFreePlan: false,
+    hasDiscount: false,
     actualPrice: "",
     discountedPrice: "",
     numberOfJobPosting: "",
@@ -69,12 +71,20 @@ const SubscriptionManagement = () => {
 
   const handleOpenModal = (pack = null) => {
     if (pack) {
-      setNewPackage(pack);
+      const isFreePlan = Number(pack.actualPrice) === 0 && Number(pack.discountedPrice) === 0;
+      setNewPackage({
+        ...pack,
+        isFreePlan,
+        hasDiscount:
+          !isFreePlan && Number(pack.actualPrice) > Number(pack.discountedPrice),
+      });
       setIsEdit(true);
     } else {
       setNewPackage({
         id: null,
         packageName: "",
+        isFreePlan: false,
+        hasDiscount: false,
         actualPrice: "",
         discountedPrice: "",
         numberOfJobPosting: "",
@@ -98,6 +108,8 @@ const SubscriptionManagement = () => {
       packageName,
       actualPrice,
       discountedPrice,
+      isFreePlan,
+      hasDiscount,
       numberOfJobPosting,
       numberOfResumeAccess,
       jobDaysActive,
@@ -113,16 +125,20 @@ const SubscriptionManagement = () => {
     if (packageName.trim().split(/\s+/).length > 3)
       return "Package name cannot exceed 3 words.";
 
-    if (!actualPrice || isNaN(actualPrice) || Number(actualPrice) <= 0)
-      return "Valid Actual Price is required.";
-    if (
-      !discountedPrice ||
-      isNaN(discountedPrice) ||
-      Number(discountedPrice) <= 0
-    )
-      return "Valid Discounted Price is required.";
-    if (Number(actualPrice) <= Number(discountedPrice))
-      return "Actual Price must be greater than Discounted Price.";
+    if (!isFreePlan) {
+      if (!actualPrice || isNaN(actualPrice) || Number(actualPrice) <= 0)
+        return "Valid Actual Price is required.";
+      if (hasDiscount) {
+        if (
+          !discountedPrice ||
+          isNaN(discountedPrice) ||
+          Number(discountedPrice) <= 0
+        )
+          return "Valid Discounted Price is required.";
+        if (Number(actualPrice) <= Number(discountedPrice))
+          return "Actual Price must be greater than Discounted Price.";
+      }
+    }
 
     if (
       !numberOfJobPosting ||
@@ -161,10 +177,18 @@ const SubscriptionManagement = () => {
       return;
     }
 
+    const actualPrice = newPackage.isFreePlan ? 0 : Number(newPackage.actualPrice);
+    const discountedPrice = newPackage.isFreePlan
+      ? 0
+      : newPackage.hasDiscount
+        ? Number(newPackage.discountedPrice)
+        : actualPrice;
+
+    const { isFreePlan, hasDiscount, ...packagePayload } = newPackage;
     const payload = {
-      ...newPackage,
-      actualPrice: Number(newPackage.actualPrice),
-      discountedPrice: Number(newPackage.discountedPrice),
+      ...packagePayload,
+      actualPrice,
+      discountedPrice,
       numberOfJobPosting: Number(newPackage.numberOfJobPosting),
       numberOfResumeAccess: Number(newPackage.numberOfResumeAccess),
       jobDaysActive: Number(newPackage.jobDaysActive),
@@ -306,9 +330,9 @@ const SubscriptionManagement = () => {
                 <div className="mb-8">
                   <div className="flex items-baseline gap-3">
                     <h3 className="text-4xl font-black text-brand-primary tracking-tight">
-                      ₹{pack.discountedPrice}
+                      {Number(pack.discountedPrice) === 0 ? "Free" : `₹${pack.discountedPrice}`}
                     </h3>
-                    {pack.actualPrice > pack.discountedPrice && (
+                    {Number(pack.actualPrice) > Number(pack.discountedPrice) && (
                       <span className="text-sm font-bold text-brand-primary/30 line-through">
                         ₹{pack.actualPrice}
                       </span>
@@ -462,7 +486,106 @@ const SubscriptionManagement = () => {
                   />
                 </div>
 
+                <div className="md:col-span-2 flex flex-col sm:flex-row gap-6">
+                  <label className="flex items-center gap-3 cursor-pointer group/check w-fit">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={newPackage.isFreePlan}
+                        onChange={(e) =>
+                          setNewPackage({
+                            ...newPackage,
+                            isFreePlan: e.target.checked,
+                            hasDiscount: e.target.checked
+                              ? false
+                              : newPackage.hasDiscount,
+                            actualPrice: e.target.checked ? "" : newPackage.actualPrice,
+                            discountedPrice: e.target.checked
+                              ? ""
+                              : newPackage.discountedPrice,
+                          })
+                        }
+                      />
+                      <div
+                        className={`w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center ${
+                          newPackage.isFreePlan
+                            ? "bg-brand-primary border-brand-primary"
+                            : "bg-white border-brand-primary/20 group-hover/check:border-brand-primary/40"
+                        }`}
+                      >
+                        {newPackage.isFreePlan && (
+                          <svg
+                            className="w-3 h-3 text-white"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={3}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-sm font-bold text-brand-primary">
+                      Free Plan
+                    </span>
+                  </label>
+
+                  {!newPackage.isFreePlan && (
+                    <label className="flex items-center gap-3 cursor-pointer group/check w-fit">
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          className="sr-only"
+                          checked={newPackage.hasDiscount}
+                          onChange={(e) =>
+                            setNewPackage({
+                              ...newPackage,
+                              hasDiscount: e.target.checked,
+                              discountedPrice: e.target.checked
+                                ? newPackage.discountedPrice
+                                : "",
+                            })
+                          }
+                        />
+                        <div
+                          className={`w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center ${
+                            newPackage.hasDiscount
+                              ? "bg-brand-primary border-brand-primary"
+                              : "bg-white border-brand-primary/20 group-hover/check:border-brand-primary/40"
+                          }`}
+                        >
+                          {newPackage.hasDiscount && (
+                            <svg
+                              className="w-3 h-3 text-white"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={3}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-sm font-bold text-brand-primary">
+                        Has Discount
+                      </span>
+                    </label>
+                  )}
+                </div>
+
                 {/* Half Width */}
+                {!newPackage.isFreePlan && (
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-widest text-brand-primary/40 ml-1">
                     Actual Price (₹)
@@ -485,6 +608,8 @@ const SubscriptionManagement = () => {
                     }
                   />
                 </div>
+                )}
+                {!newPackage.isFreePlan && newPackage.hasDiscount && (
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-widest text-brand-primary/40 ml-1">
                     Discounted Price (₹)
@@ -507,6 +632,7 @@ const SubscriptionManagement = () => {
                     }
                   />
                 </div>
+                )}
 
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-widest text-brand-primary/40 ml-1">
