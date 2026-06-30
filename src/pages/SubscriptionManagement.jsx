@@ -26,6 +26,21 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
+const hasPriceValue = (value) =>
+  value !== null && value !== undefined && value !== "";
+
+const isZeroPrice = (value) => hasPriceValue(value) && Number(value) === 0;
+
+const isFreeSubscriptionPlan = (pack) =>
+  pack.isFree === true ||
+  (pack.actualPrice === null && pack.discountedPrice === null) ||
+  (isZeroPrice(pack.actualPrice) && isZeroPrice(pack.discountedPrice));
+
+const hasSubscriptionDiscount = (pack) =>
+  !isFreeSubscriptionPlan(pack) &&
+  hasPriceValue(pack.discountedPrice) &&
+  Number(pack.discountedPrice) > 0;
+
 const SubscriptionManagement = () => {
   const dispatch = useDispatch();
   const { packages, loading, error } = useSelector(
@@ -44,7 +59,7 @@ const SubscriptionManagement = () => {
     actualPrice: "",
     discountedPrice: "",
     numberOfJobPosting: "",
-    numberOfResumeAccess: "",
+    numberOfApplications: "",
     jobDaysActive: "",
     expireDaysPackage: "",
     isRecommended: false,
@@ -71,12 +86,15 @@ const SubscriptionManagement = () => {
 
   const handleOpenModal = (pack = null) => {
     if (pack) {
-      const isFreePlan = Number(pack.actualPrice) === 0 && Number(pack.discountedPrice) === 0;
+      const isFreePlan = isFreeSubscriptionPlan(pack);
+      const hasDiscount = hasSubscriptionDiscount(pack);
+
       setNewPackage({
         ...pack,
+        actualPrice: isFreePlan ? "" : (pack.actualPrice ?? ""),
+        discountedPrice: hasDiscount ? pack.discountedPrice : "",
         isFreePlan,
-        hasDiscount:
-          !isFreePlan && Number(pack.actualPrice) > Number(pack.discountedPrice),
+        hasDiscount,
       });
       setIsEdit(true);
     } else {
@@ -88,7 +106,7 @@ const SubscriptionManagement = () => {
         actualPrice: "",
         discountedPrice: "",
         numberOfJobPosting: "",
-        numberOfResumeAccess: "",
+        numberOfApplications: "",
         jobDaysActive: "",
         expireDaysPackage: "",
         isRecommended: false,
@@ -111,7 +129,7 @@ const SubscriptionManagement = () => {
       isFreePlan,
       hasDiscount,
       numberOfJobPosting,
-      numberOfResumeAccess,
+      numberOfApplications,
       jobDaysActive,
       expireDaysPackage,
     } = newPackage;
@@ -147,11 +165,11 @@ const SubscriptionManagement = () => {
     )
       return "Number of Job Postings is required.";
     if (
-      !numberOfResumeAccess ||
-      isNaN(numberOfResumeAccess) ||
-      Number(numberOfResumeAccess) <= 0
+      !numberOfApplications ||
+      isNaN(numberOfApplications) ||
+      Number(numberOfApplications) <= 0
     )
-      return "Resume Access Limit is required.";
+      return "Number of applications is required.";
     if (!jobDaysActive || isNaN(jobDaysActive) || Number(jobDaysActive) <= 0)
       return "Job Post Validity is required.";
     if (
@@ -177,20 +195,23 @@ const SubscriptionManagement = () => {
       return;
     }
 
-    const actualPrice = newPackage.isFreePlan ? 0 : Number(newPackage.actualPrice);
+    const actualPrice = newPackage.isFreePlan
+      ? null
+      : Number(newPackage.actualPrice);
     const discountedPrice = newPackage.isFreePlan
-      ? 0
+      ? null
       : newPackage.hasDiscount
         ? Number(newPackage.discountedPrice)
-        : actualPrice;
+        : null;
 
     const { isFreePlan, hasDiscount, ...packagePayload } = newPackage;
     const payload = {
       ...packagePayload,
+      isFree: isFreePlan,
       actualPrice,
       discountedPrice,
       numberOfJobPosting: Number(newPackage.numberOfJobPosting),
-      numberOfResumeAccess: Number(newPackage.numberOfResumeAccess),
+      numberOfApplications: Number(newPackage.numberOfApplications),
       jobDaysActive: Number(newPackage.jobDaysActive),
       expireDaysPackage: Number(newPackage.expireDaysPackage),
     };
@@ -292,7 +313,14 @@ const SubscriptionManagement = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredPackages.map((pack) => (
+            {filteredPackages.map((pack) => {
+              const isFreePlan = isFreeSubscriptionPlan(pack);
+              const hasDiscount = hasSubscriptionDiscount(pack);
+              const displayPrice = hasDiscount
+                ? pack.discountedPrice
+                : pack.actualPrice;
+
+              return (
               <div
                 key={pack.id}
                 className="bg-white rounded-[32px] p-8 border border-brand-primary/5 shadow-soft relative overflow-hidden group hover:border-brand-primary/20 transition-all"
@@ -330,9 +358,9 @@ const SubscriptionManagement = () => {
                 <div className="mb-8">
                   <div className="flex items-baseline gap-3">
                     <h3 className="text-4xl font-black text-brand-primary tracking-tight">
-                      {Number(pack.discountedPrice) === 0 ? "Free" : `₹${pack.discountedPrice}`}
+                      {isFreePlan ? "Free" : `₹${displayPrice}`}
                     </h3>
-                    {Number(pack.actualPrice) > Number(pack.discountedPrice) && (
+                    {hasDiscount && (
                       <span className="text-sm font-bold text-brand-primary/30 line-through">
                         ₹{pack.actualPrice}
                       </span>
@@ -366,10 +394,10 @@ const SubscriptionManagement = () => {
                     </div>
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary/40">
-                        Resume Access
+                        Applications
                       </p>
                       <p className="text-sm font-bold text-brand-primary">
-                        {pack.numberOfResumeAccess} Views/Job
+                        {pack.numberOfApplications} Applicants/Job
                       </p>
                     </div>
                   </div>
@@ -401,7 +429,8 @@ const SubscriptionManagement = () => {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -658,18 +687,18 @@ const SubscriptionManagement = () => {
                 </div>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-widest text-brand-primary/40 ml-1">
-                    Resume Access (Per Job)
+                    Applications Limit (Per Job)
                   </label>
                   <input
                     type="number"
                     placeholder="Count"
                     min="0"
                     className="w-full p-4 bg-brand-primary/3 border border-transparent rounded-2xl text-sm font-bold text-brand-primary focus:border-brand-primary/20 focus:bg-white focus:ring-4 focus:ring-brand-primary/5 transition-all outline-none"
-                    value={newPackage.numberOfResumeAccess}
+                    value={newPackage.numberOfApplications}
                     onChange={(e) =>
                       setNewPackage({
                         ...newPackage,
-                        numberOfResumeAccess: e.target.value,
+                        numberOfApplications: e.target.value,
                       })
                     }
                     onKeyDown={(e) =>

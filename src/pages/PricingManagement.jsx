@@ -15,7 +15,7 @@ const PricingManagement = () => {
 
     const mockPlans = [
         { id: 1, name: 'Basic', price: '$49', features: ['5 Job Postings', 'Standard Support', 'Basic Analytics'], color: 'blue' },
-        { id: 2, name: 'Pro', price: '$149', features: ['Unlimited Jobs', 'Priority Support', 'Advanced Analytics', 'Resume Access'], color: 'brand' },
+        { id: 2, name: 'Pro', price: '$149', features: ['Unlimited Jobs', 'Priority Support', 'Advanced Analytics', 'Applications'], color: 'brand' },
         { id: 3, name: 'Enterprise', price: '$499', features: ['Everything in Pro', 'Dedicated Manager', 'API Access', 'Custom Branding'], color: 'dark' },
     ];
 
