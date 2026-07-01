@@ -616,6 +616,15 @@ export const getAllRegisteredCompanysApi = async (status) => {
   }
 };
 
+export const getCompanyDetailsApi = async (companyId) => {
+  try {
+    let response = await api.get(`/company/get-company-details/${companyId}`);
+    return response.data;
+  } catch (error) {
+    throw error?.response?.data?.message || "Something went wrong";
+  }
+};
+
 export const changeCompanyStatusApi = async (id, status, reason) => {
   try {
 

@@ -21,6 +21,8 @@ import { useState, useMemo, useEffect } from "react";
 import CompanyDetailsModal from "../components/modals/CompanyDetailsModal";
 import StatusTabs from "../components/common/StatusTabs";
 import EmptyState from "../components/common/EmptyState";
+import { getCompanyDetailsApi } from "../helper/api_helper";
+import toast from "react-hot-toast";
 
 const companyStatus = [
   { label: "PENDING", value: "PENDING", icon: "mdi:progress-clock" },
@@ -35,6 +37,7 @@ const CompanyManagement = () => {
   const [activeTab, setActiveTab] = useState("PENDING");
   const [search, setSearch] = useState("");
   const [selectedCompany, setSelectedCompany] = useState(null);
+  const [detailsLoadingId, setDetailsLoadingId] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null); // company to reject
 
   // Fetch companies when activeTab changes
@@ -54,10 +57,15 @@ const CompanyManagement = () => {
 
   const filteredCompanies = useMemo(() => {
     return list.filter((company) => {
+      const industryName =
+        company?.industryName ||
+        company?.industryType?.categoryName ||
+        company?.industryType ||
+        "";
       const matchesSearch =
         company?.companyName?.toLowerCase()?.includes(search?.toLowerCase()) ||
         company?.email?.toLowerCase()?.includes(search?.toLowerCase()) ||
-        company?.industryType?.toLowerCase()?.includes(search?.toLowerCase());
+        industryName?.toLowerCase()?.includes(search?.toLowerCase());
       return matchesSearch;
     });
   }, [list, search]);
@@ -83,6 +91,22 @@ const CompanyManagement = () => {
   const handleApprove = (id) => {
     dispatch(updateCompanyStatus({ id: id, status: "APPROVED" }));
     dispatch(fetchCompanies(activeTab));
+  };
+
+  const handleViewCompany = async (company) => {
+    setDetailsLoadingId(company.id);
+    try {
+      const response = await getCompanyDetailsApi(company.id);
+      if (response.status) {
+        setSelectedCompany(response.data);
+        return;
+      }
+      toast.error(response.message || "Failed to fetch company details");
+    } catch (error) {
+      toast.error(error || "Failed to fetch company details");
+    } finally {
+      setDetailsLoadingId(null);
+    }
   };
 
   // Open reject popup
@@ -213,7 +237,7 @@ const CompanyManagement = () => {
                       </td>
                       <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5 group-hover:border-brand-primary/10 transition-colors">
                         <span className="text-xs font-bold text-brand-primary/60">
-                          {company.industryName || "-"}
+                          {company.industryName || company.industryType?.categoryName || "-"}
                         </span>
                       </td>
                       <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5 group-hover:border-brand-primary/10 transition-colors">
@@ -225,7 +249,7 @@ const CompanyManagement = () => {
                       <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5 text-center group-hover:border-brand-primary/10 transition-colors">
                         <span
                           className={`
-                                                px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase inline-block
+                                                px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest capitalize inline-block
                                                 ${
                                                   company.companyStatus ===
                                                   "APPROVED"
@@ -237,7 +261,7 @@ const CompanyManagement = () => {
                                                 }
                                             `}
                         >
-                          {company.companyStatus}
+                          {company.companyStatus.toLowerCase()}
                         </span>
                       </td>
                       <td className="bg-brand-primary/2 px-6 py-5 border-y border-brand-primary/5 text-center group-hover:border-brand-primary/10 transition-colors">
@@ -246,19 +270,24 @@ const CompanyManagement = () => {
                             "px-4 py-1.5 flex gap-1 items-center text-black bg-gray-100 rounded-full text-sm font-black tracking-widest uppercase "
                           }
                         >
-                          <Star className="w-3.5 h-3.5 text-yellow-500" />
-                          {company.AiScore}
+                         {company?.AiScored && <Star className="w-3.5 h-3.5 text-yellow-500" />}
+                          {company?.AiScored ? company.AiScore : <p className="text-[10px] font-black text-black/80 tracking-widest capitalize">pending</p>}
                         </span>
                       </td>
                       <td className="bg-brand-primary/2 px-6 py-5 rounded-r-3xl border-y border-r border-brand-primary/5 text-right group-hover:border-brand-primary/10 transition-colors">
                         <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                          {/* <button
-                          onClick={() => setSelectedCompany(company)}
-                          className="p-2 text-brand-primary hover:bg-white hover:text-brand-accent rounded-xl transition-all shadow-hover-sm sm:shadow-none sm:hover:shadow-soft"
-                          title="View Profile"
-                        >
-                          <Eye className="w-5 h-5" />
-                        </button> */}
+                          <button
+                            onClick={() => handleViewCompany(company)}
+                            className="p-2 text-brand-primary hover:bg-white hover:text-brand-accent rounded-xl transition-all shadow-hover-sm sm:shadow-none sm:hover:shadow-soft"
+                            title="View Details"
+                            disabled={detailsLoadingId === company.id}
+                          >
+                            {detailsLoadingId === company.id ? (
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                              <Eye className="w-5 h-5" />
+                            )}
+                          </button>
                           {company.companyStatus === "PENDING" && (
                             <>
                               <button
@@ -307,15 +336,20 @@ const CompanyManagement = () => {
           </div>
         </div>
 
-        {/* Modal */}
-        {/* {selectedCompany && (
-        <CompanyDetailsModal
-          company={selectedCompany}
-          onClose={() => setSelectedCompany(null)}
-          onApprove={(id) => handleStatusUpdate(id, "APPROVED")}
-          onReject={(id) => handleStatusUpdate(id, "REJECTED")}
-        />
-      )} */}
+        {selectedCompany && (
+          <CompanyDetailsModal
+            company={selectedCompany}
+            onClose={() => setSelectedCompany(null)}
+            onApprove={(id) => {
+              handleApprove(id);
+              setSelectedCompany(null);
+            }}
+            onReject={(company) => {
+              setSelectedCompany(null);
+              handleRejectClick(company);
+            }}
+          />
+        )}
       </div>
     </>
   );
