@@ -140,6 +140,7 @@ import {
   ChevronLeft,
   ChevronRight,
   UserX,
+  CreditCard,
 } from "lucide-react";
 import { logout } from "../../store/slices/authSlice";
 
@@ -158,6 +159,7 @@ const Sidebar = () => {
         { name: "Companies", icon: Building2, path: "/companies" },
         { name: "Jobs", icon: Briefcase, path: "/jobs" },
         { name: "Pricing & Plans", icon: Tag, path: "/pricing" },
+        { name: "Intern Plans", icon: CreditCard, path: "/intern-pricing" },
       ],
     },
     {

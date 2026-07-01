@@ -818,6 +818,42 @@ export const updateSubscriptionPackage = async (id, data) => {
   }
 };
 
+export const getInternSubscriptionPlans = async () => {
+  try {
+    let response = await api.get("/intern-subscription/admin/plans");
+    return response.data;
+  } catch (error) {
+    return error.response.data;
+  }
+};
+
+export const createInternSubscriptionPlan = async (data) => {
+  try {
+    let response = await api.post("/intern-subscription/admin/plans", data);
+    return response.data;
+  } catch (error) {
+    return error.response.data;
+  }
+};
+
+export const updateInternSubscriptionPlan = async (id, data) => {
+  try {
+    let response = await api.put(`/intern-subscription/admin/plans/${id}`, data);
+    return response.data;
+  } catch (error) {
+    return error.response.data;
+  }
+};
+
+export const deleteInternSubscriptionPlan = async (id) => {
+  try {
+    let response = await api.delete(`/intern-subscription/admin/plans/${id}`);
+    return response.data;
+  } catch (error) {
+    return error.response.data;
+  }
+};
+
 export const getSupportTicketsList = async (body) => {
   try {
     let response = await api.post("/support/admin/get-all-supports", body);

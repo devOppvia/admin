@@ -21,6 +21,7 @@ import FaqManagement from "./pages/FaqManagement";
 import ChatMessage from "./pages/ChatMessage";
 import ContactInquiry from "./pages/ContactInquiry";
 import SubscriptionManagement from "./pages/SubscriptionManagement";
+import InternSubscriptionManagement from "./pages/InternSubscriptionManagement";
 import LoginPage from "./pages/LoginPage";
 import SkillsManagement from "./pages/SkillsManagement";
 import IncompleteProfileInterns from "./pages/IncompleteProfileInterns";
@@ -101,6 +102,7 @@ function App() {
               <Route path="chat-message" element={<ChatMessage />} />
               <Route path="contact-inquiry" element={<ContactInquiry />} />
               <Route path="pricing" element={<SubscriptionManagement />} />
+              <Route path="intern-pricing" element={<InternSubscriptionManagement />} />
               <Route path="incomplete-profile-interns" element={<IncompleteProfileInterns />} />
               <Route path="incomplete-profile-companies" element={<IncompleteProfileCompanies />} />
               {/* Add more routes based on SRS */}
