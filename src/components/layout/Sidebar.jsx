@@ -159,7 +159,7 @@ const Sidebar = () => {
         { name: "Companies", icon: Building2, path: "/companies" },
         { name: "Jobs", icon: Briefcase, path: "/jobs" },
         { name: "Pricing & Plans", icon: Tag, path: "/pricing" },
-        { name: "Intern Plans", icon: CreditCard, path: "/intern-pricing" },
+        { name: "Interview Plans", icon: CreditCard, path: "/intern-pricing" },
       ],
     },
     {

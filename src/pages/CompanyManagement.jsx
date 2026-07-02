@@ -38,6 +38,7 @@ const CompanyManagement = () => {
   const [search, setSearch] = useState("");
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [detailsLoadingId, setDetailsLoadingId] = useState(null);
+  const [statusUpdatingId, setStatusUpdatingId] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null); // company to reject
 
   // Fetch companies when activeTab changes
@@ -88,9 +89,19 @@ const CompanyManagement = () => {
     });
   };
 
-  const handleApprove = (id) => {
-    dispatch(updateCompanyStatus({ id: id, status: "APPROVED" }));
-    dispatch(fetchCompanies(activeTab));
+  const handleApprove = async (id) => {
+    if (statusUpdatingId) return;
+
+    setStatusUpdatingId(id);
+    try {
+      await dispatch(updateCompanyStatus({ id, status: "APPROVED" })).unwrap();
+      await dispatch(fetchCompanies(activeTab));
+      toast.success("Company profile updated successfully");
+    } catch (error) {
+      toast.error(error || "Failed to update company profile");
+    } finally {
+      setStatusUpdatingId(null);
+    }
   };
 
   const handleViewCompany = async (company) => {
@@ -116,11 +127,25 @@ const CompanyManagement = () => {
 
   // Confirm reject with reason
   const handleRejectConfirm = async (reason) => {
-    await dispatch(
-      updateCompanyStatus({ id: rejectTarget.id, status: "REJECTED", reason }),
-    );
-    setRejectTarget(null);
-    dispatch(fetchCompanies(activeTab));
+    if (statusUpdatingId) return;
+
+    setStatusUpdatingId(rejectTarget.id);
+    try {
+      await dispatch(
+        updateCompanyStatus({
+          id: rejectTarget.id,
+          status: "REJECTED",
+          reason,
+        }),
+      ).unwrap();
+      setRejectTarget(null);
+      await dispatch(fetchCompanies(activeTab));
+      toast.success("Company profile rejected");
+    } catch (error) {
+      toast.error(error || "Failed to reject company profile");
+    } finally {
+      setStatusUpdatingId(null);
+    }
   };
 
   return (
@@ -275,7 +300,7 @@ const CompanyManagement = () => {
                         </span>
                       </td>
                       <td className="bg-brand-primary/2 px-6 py-5 rounded-r-3xl border-y border-r border-brand-primary/5 text-right group-hover:border-brand-primary/10 transition-colors">
-                        <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-2 opacity-100">
                           <button
                             onClick={() => handleViewCompany(company)}
                             className="p-2 text-brand-primary hover:bg-white hover:text-brand-accent rounded-xl transition-all shadow-hover-sm sm:shadow-none sm:hover:shadow-soft"
@@ -294,13 +319,19 @@ const CompanyManagement = () => {
                                 onClick={() => handleApprove(company.id)}
                                 className="p-2 text-green-600 hover:bg-white rounded-xl transition-all shadow-hover-sm sm:shadow-none sm:hover:shadow-soft"
                                 title="Approve"
+                                disabled={statusUpdatingId === company.id}
                               >
-                                <CheckCircle2 className="w-5 h-5" />
+                                {statusUpdatingId === company.id ? (
+                                  <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : (
+                                  <CheckCircle2 className="w-5 h-5" />
+                                )}
                               </button>
                               <button
                                 onClick={() => handleRejectClick(company)}
                                 className="p-2 text-red-600 hover:bg-white rounded-xl transition-all shadow-hover-sm sm:shadow-none sm:hover:shadow-soft"
                                 title="Reject"
+                                disabled={statusUpdatingId === company.id}
                               >
                                 <XCircle className="w-5 h-5" />
                               </button>

@@ -21,6 +21,7 @@ import {
 } from "../helper/api_helper";
 
 const INTERVIEW_DURATION_OPTIONS = [
+  { value: "MIN_3", label: "3 Minutes" },
   { value: "MIN_15", label: "15 Minutes" },
   { value: "MIN_30", label: "30 Minutes" },
   { value: "MIN_45", label: "45 Minutes" },
@@ -120,10 +121,10 @@ const InternSubscriptionManagement = () => {
       if (response?.status) {
         setPlans(response.data || []);
       } else {
-        toast.error(response?.message || "Failed to fetch intern plans");
+        toast.error(response?.message || "Failed to fetch interview plans");
       }
     } catch (error) {
-      toast.error(error?.message || "Failed to fetch intern plans");
+      toast.error(error?.message || "Failed to fetch interview plans");
     } finally {
       setLoading(false);
     }
@@ -143,7 +144,7 @@ const InternSubscriptionManagement = () => {
 
   const openModal = (plan = null) => {
     if (!plan && !canCreatePlan) {
-      toast.error("Only three intern subscription plans can be created");
+      toast.error("Only three interview plans can be created");
       return;
     }
 
@@ -243,7 +244,7 @@ const InternSubscriptionManagement = () => {
       interviewType: Number(form.interviewType),
       identityVerification: form.identityVerification,
       features: form.featuresText
-        .split("\n")
+        .split(/\r?\n|[•·,;|]/)
         .map((feature) => feature.trim())
         .filter(Boolean),
       isPopular: form.isPopular,
@@ -296,7 +297,7 @@ const InternSubscriptionManagement = () => {
               <div>
                 <h3 className="text-xl font-black text-brand-primary tracking-tight uppercase">
                   {isEdit ? "Edit" : "Create"}{" "}
-                  <span className="text-brand-primary/30">Intern Plan</span>
+                  <span className="text-brand-primary/30">Interview Plan</span>
                 </h3>
                 <p className="text-[10px] font-black text-brand-primary/40 uppercase tracking-widest mt-1">
                   Configure AI interview access
@@ -436,7 +437,7 @@ const InternSubscriptionManagement = () => {
                   label="Features"
                   value={form.featuresText}
                   onChange={(value) => setForm({ ...form, featuresText: value })}
-                  placeholder="Write one feature per line"
+                  placeholder="Write one feature per line or separate with commas"
                   className="md:col-span-2"
                 />
 
@@ -479,11 +480,11 @@ const InternSubscriptionManagement = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-brand-primary/5">
         <div>
           <h1 className="text-3xl font-black text-brand-primary tracking-tight uppercase leading-tight">
-            Intern Subscription{" "}
+            Interview{" "}
             <span className="text-brand-primary/30">Plans</span>
           </h1>
           <p className="text-brand-primary/50 text-xs font-black uppercase tracking-widest mt-1">
-            Manage AI interview subscription plans
+            Manage AI interview plans
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -514,7 +515,7 @@ const InternSubscriptionManagement = () => {
       ) : filteredPlans.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-brand-primary/50 font-medium">
-            No intern subscription plans found.
+            No interview plans found.
           </p>
         </div>
       ) : (
